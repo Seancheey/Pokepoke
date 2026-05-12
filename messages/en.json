@@ -1,0 +1,284 @@
+{
+  "Nav": {
+    "brand": "PokePoke",
+    "section": "Champions",
+    "pokemon": "Pokémon",
+    "moves": "Moves",
+    "abilities": "Abilities",
+    "items": "Items",
+    "teamBuilder": "Team Builder",
+    "teams": "Teams",
+    "damageCalc": "Damage Calc",
+    "language": "Language"
+  },
+  "Hub": {
+    "regulationBadge": "Reg M-A",
+    "regulationLabel": "Current Regulation",
+    "heroTitle": "Build, share, and stress-test Pokémon Champions teams in seconds.",
+    "heroSubtitle": "No account. No login. Share a team with a URL.",
+    "ctaTeamBuilder": "Open Team Builder →",
+    "ctaDamageCalc": "Damage Calculator",
+    "ctaTeams": "Browse Teams",
+    "topByUsageTitle": "Top 10 by usage",
+    "topByUsageSubtitle": "Most-used Pokémon in the current ruleset.",
+    "seeFullList": "See full list →",
+    "rankShort": "#{rank}",
+    "tools": {
+      "pokemon": {
+        "title": "Pokémon Database",
+        "desc": "Filter by type, ability, move, and usage. Sortable on every stat."
+      },
+      "teamBuilder": {
+        "title": "Team Builder",
+        "desc": "Six slots, share via URL, no signup. Coverage matrix and speed tiers built in."
+      },
+      "damageCalc": {
+        "title": "Damage Calculator",
+        "desc": "Roll-accurate against Pikalytics. Doubles, weather, terrain, screens."
+      }
+    },
+    "phaseCallout": "Phase 0 build — seed data only. Live usage data wires up in Phase 2.",
+    "phaseCalloutTag": "Heads up:"
+  },
+  "List": {
+    "title": "Pokémon",
+    "subtitle": "{count, plural, =1 {1 result} other {# results}} · Regulation M-A",
+    "search": "Search Pokémon…",
+    "typeLabel": "Type:",
+    "clear": "Clear",
+    "empty": "No Pokémon match. Try removing a filter.",
+    "clearFilters": "Clear filters",
+    "columns": {
+      "dex": "#",
+      "sprite": "Sprite",
+      "name": "Name",
+      "types": "Types",
+      "usage": "Usage",
+      "hp": "HP",
+      "atk": "Atk",
+      "def": "Def",
+      "spa": "SpA",
+      "spd": "SpD",
+      "spe": "Spe",
+      "bst": "BST"
+    }
+  },
+  "Detail": {
+    "back": "← All Pokémon",
+    "usage": "Usage:",
+    "rank": "Rank:",
+    "bst": "BST:",
+    "baseStats": "Base stats",
+    "abilities": "Abilities",
+    "hiddenSuffix": "(hidden)",
+    "phase1Note": "Movepool, top sets, teammates, and matchup grid land in Phase 1."
+  },
+  "Moves": {
+    "title": "Moves",
+    "subtitle": "{count, plural, =1 {1 move} other {# moves}}",
+    "search": "Search moves…",
+    "back": "← All moves",
+    "categoryLabel": "Category:",
+    "categoryAll": "All",
+    "categoryPhysical": "Physical",
+    "categorySpecial": "Special",
+    "categoryStatus": "Status",
+    "typeLabel": "Type:",
+    "clear": "Clear",
+    "empty": "No moves match.",
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "category": "Cat.",
+      "power": "Pow.",
+      "accuracy": "Acc.",
+      "pp": "PP",
+      "priority": "Prio.",
+      "usage": "Usage"
+    },
+    "detail": {
+      "effect": "Effect",
+      "stats": "Stats",
+      "contact": "Contact",
+      "yes": "Yes",
+      "no": "No",
+      "target": "Target",
+      "phase1Note": "Learnset table lands later in Phase 1."
+    }
+  },
+  "Abilities": {
+    "title": "Abilities",
+    "subtitle": "{count, plural, =1 {1 ability} other {# abilities}}",
+    "search": "Search abilities…",
+    "back": "← All abilities",
+    "empty": "No abilities match.",
+    "columns": {
+      "name": "Name",
+      "desc": "Description",
+      "usage": "Usage"
+    },
+    "detail": {
+      "description": "Description",
+      "stats": "Stats",
+      "holders": "Pokémon with this ability"
+    }
+  },
+  "Items": {
+    "title": "Items",
+    "subtitle": "{count, plural, =1 {1 item} other {# items}}",
+    "search": "Search items…",
+    "back": "← All items",
+    "categoryLabel": "Category:",
+    "categoryAll": "All",
+    "categoryHeld": "Held",
+    "categoryChoice": "Choice",
+    "categoryBerry": "Berry",
+    "categoryMega": "Mega Stone",
+    "categoryTypeBoost": "Type-boost",
+    "categoryMisc": "Misc",
+    "empty": "No items match.",
+    "columns": {
+      "name": "Name",
+      "category": "Category",
+      "effect": "Effect",
+      "usage": "Usage"
+    },
+    "detail": {
+      "description": "Description",
+      "stats": "Stats"
+    }
+  },
+  "DamageCalc": {
+    "title": "Damage Calculator",
+    "subtitle": "Roll-accurate, type-aware. Level 50, Champions ruleset.",
+    "attacker": "Attacker",
+    "defender": "Defender",
+    "speciesLabel": "Species",
+    "abilityLabel": "Ability",
+    "itemLabel": "Item",
+    "moveLabel": "Move",
+    "field": "Field conditions",
+    "weather": "Weather",
+    "weatherNone": "—",
+    "weatherSun": "Harsh sunlight",
+    "weatherRain": "Rain",
+    "weatherSand": "Sandstorm",
+    "weatherSnow": "Snow",
+    "format": "Format",
+    "formatSingles": "Singles",
+    "formatDoubles": "Doubles (spread)",
+    "burn": "Burn (attacker)",
+    "crit": "Critical hit",
+    "result": "Result",
+    "noResult": "Pick an attacker, defender, and damaging move.",
+    "minMax": "Min – Max",
+    "pctRange": "% of defender HP",
+    "stab": "STAB",
+    "effectiveness": "Effectiveness",
+    "notes": "Skipped in v1: stat stages, screens, hazards. Coming in polish."
+  },
+  "TeamBuilder": {
+    "title": "Team Builder",
+    "subtitle": "Six slots. No account. Share a team with a URL.",
+    "slotEmpty": "Empty slot",
+    "slotEmptyHint": "Pick a Pokémon",
+    "addPokemon": "Add Pokémon",
+    "remove": "Remove",
+    "speciesLabel": "Species",
+    "abilityLabel": "Ability",
+    "itemLabel": "Item",
+    "movesLabel": "Moves",
+    "vpLabel": "Victory Points (VP)",
+    "vpRemaining": "{remaining} VP remaining",
+    "vpOver": "Over by {over} VP",
+    "vpStat": {
+      "hp": "HP", "atk": "Atk", "def": "Def", "spa": "SpA", "spd": "SpD", "spe": "Spe"
+    },
+    "share": "Share",
+    "copyLink": "Copy link",
+    "copied": "Link copied!",
+    "open": "Open",
+    "clear": "Clear team",
+    "format": "Format",
+    "formatSingles": "Singles",
+    "formatDoubles": "Doubles",
+    "regulation": "Regulation",
+    "regulationMA": "Reg M-A",
+    "noItem": "(no item)",
+    "moveSlot": "Move {n}",
+    "moveNone": "(none)",
+    "coverage": "Type coverage",
+    "coverageHint": "Number of team members with at least one super-effective move against each type.",
+    "defenseTitle": "Team defense",
+    "offenseTitle": "Team offense",
+    "offenseHint": "Best offensive multiplier each team member's selected damage moves can deal against each type.",
+    "noDamageMove": "—",
+    "weakColumn": "Members weak to this type",
+    "resistColumn": "Members that resist this type",
+    "netColumn": "Net (resists − weaknesses)",
+    "offenseWeakColumn": "Members with no super-effective move",
+    "offenseStrongColumn": "Members with a super-effective move",
+    "loading": "Loading…",
+    "invalidShare": "Couldn't decode share link. Starting fresh."
+  },
+  "Placeholder": {
+    "back": "Back to hub",
+    "moves": {
+      "title": "Moves",
+      "phase": "Phase 1",
+      "desc": "Browse moves by type, category, power, and accuracy. Lands in Phase 1."
+    },
+    "abilities": {
+      "title": "Abilities",
+      "phase": "Phase 1",
+      "desc": "Searchable ability list with descriptions and holders. Lands in Phase 1."
+    },
+    "items": {
+      "title": "Items",
+      "phase": "Phase 1",
+      "desc": "Held items, mega stones, berries — categorized and filterable. Lands in Phase 1."
+    },
+    "teamBuilder": {
+      "title": "Team Builder",
+      "phase": "Phase 1",
+      "desc": "Six slots, share via URL, no signup. The headline feature — wired up in Phase 1."
+    },
+    "teams": {
+      "title": "Teams",
+      "phase": "Phase 2",
+      "desc": "Browse tournament and community teams. Lands in Phase 2."
+    },
+    "damageCalc": {
+      "title": "Damage Calculator",
+      "phase": "Phase 1",
+      "desc": "Doubles, weather, terrain, screens. Roll-accurate. Lands in Phase 1."
+    }
+  },
+  "Types": {
+    "normal": "Normal",
+    "fire": "Fire",
+    "water": "Water",
+    "electric": "Electric",
+    "grass": "Grass",
+    "ice": "Ice",
+    "fighting": "Fighting",
+    "poison": "Poison",
+    "ground": "Ground",
+    "flying": "Flying",
+    "psychic": "Psychic",
+    "bug": "Bug",
+    "rock": "Rock",
+    "ghost": "Ghost",
+    "dragon": "Dragon",
+    "dark": "Dark",
+    "steel": "Steel",
+    "fairy": "Fairy"
+  },
+  "Footer": {
+    "tagline": "PokePoke · companion for Pokémon Champions · seed data only — usage stats are illustrative."
+  },
+  "Meta": {
+    "title": "PokePoke — Pokémon Champions",
+    "description": "Build, share, and stress-test Pokémon Champions teams. No account required."
+  }
+}

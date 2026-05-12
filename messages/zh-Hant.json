@@ -1,0 +1,284 @@
+{
+  "Nav": {
+    "brand": "PokePoke",
+    "section": "冠軍賽",
+    "pokemon": "寶可夢",
+    "moves": "招式",
+    "abilities": "特性",
+    "items": "道具",
+    "teamBuilder": "隊伍構築",
+    "teams": "隊伍",
+    "damageCalc": "傷害計算",
+    "language": "語言"
+  },
+  "Hub": {
+    "regulationBadge": "規則 M-A",
+    "regulationLabel": "現行規則",
+    "heroTitle": "幾秒鐘內構築、分享並測試你的寶可夢冠軍賽隊伍。",
+    "heroSubtitle": "無需帳號。無需登入。一條 URL 即可分享。",
+    "ctaTeamBuilder": "開啟隊伍構築 →",
+    "ctaDamageCalc": "傷害計算",
+    "ctaTeams": "瀏覽隊伍",
+    "topByUsageTitle": "使用率前 10",
+    "topByUsageSubtitle": "現行規則下使用最多的寶可夢。",
+    "seeFullList": "查看完整列表 →",
+    "rankShort": "#{rank}",
+    "tools": {
+      "pokemon": {
+        "title": "寶可夢圖鑑",
+        "desc": "依屬性、特性、招式和使用率篩選,所有種族值皆可排序。"
+      },
+      "teamBuilder": {
+        "title": "隊伍構築",
+        "desc": "六個欄位,URL 分享,無需註冊。內建屬性覆蓋與速度階層。"
+      },
+      "damageCalc": {
+        "title": "傷害計算",
+        "desc": "與 Pikalytics 數值一致。支援雙打、天氣、場地、屏障。"
+      }
+    },
+    "phaseCallout": "階段 0 建置 — 僅種子資料。實時使用率資料將在階段 2 接入。",
+    "phaseCalloutTag": "注意:"
+  },
+  "List": {
+    "title": "寶可夢",
+    "subtitle": "{count, plural, other {# 個結果}} · 規則 M-A",
+    "search": "搜尋寶可夢…",
+    "typeLabel": "屬性:",
+    "clear": "清除",
+    "empty": "未找到符合條件的寶可夢。請嘗試去除一個篩選條件。",
+    "clearFilters": "清除篩選",
+    "columns": {
+      "dex": "#",
+      "sprite": "圖像",
+      "name": "名稱",
+      "types": "屬性",
+      "usage": "使用率",
+      "hp": "HP",
+      "atk": "攻擊",
+      "def": "防禦",
+      "spa": "特攻",
+      "spd": "特防",
+      "spe": "速度",
+      "bst": "總和"
+    }
+  },
+  "Detail": {
+    "back": "← 全部寶可夢",
+    "usage": "使用率:",
+    "rank": "排名:",
+    "bst": "種族值總和:",
+    "baseStats": "種族值",
+    "abilities": "特性",
+    "hiddenSuffix": "(隱藏特性)",
+    "phase1Note": "招式池、配置範例、搭檔與屬性相剋表將在階段 1 上線。"
+  },
+  "Moves": {
+    "title": "招式",
+    "subtitle": "{count, plural, other {# 個招式}}",
+    "search": "搜尋招式…",
+    "back": "← 全部招式",
+    "categoryLabel": "分類:",
+    "categoryAll": "全部",
+    "categoryPhysical": "物理",
+    "categorySpecial": "特殊",
+    "categoryStatus": "變化",
+    "typeLabel": "屬性:",
+    "clear": "清除",
+    "empty": "未找到符合條件的招式。",
+    "columns": {
+      "name": "名稱",
+      "type": "屬性",
+      "category": "分類",
+      "power": "威力",
+      "accuracy": "命中",
+      "pp": "PP",
+      "priority": "先制",
+      "usage": "使用率"
+    },
+    "detail": {
+      "effect": "效果",
+      "stats": "數據",
+      "contact": "接觸",
+      "yes": "是",
+      "no": "否",
+      "target": "目標",
+      "phase1Note": "可習得寶可夢清單將在階段 1 內補充。"
+    }
+  },
+  "Abilities": {
+    "title": "特性",
+    "subtitle": "{count, plural, other {# 個特性}}",
+    "search": "搜尋特性…",
+    "back": "← 全部特性",
+    "empty": "未找到符合條件的特性。",
+    "columns": {
+      "name": "名稱",
+      "desc": "說明",
+      "usage": "使用率"
+    },
+    "detail": {
+      "description": "說明",
+      "stats": "數據",
+      "holders": "擁有該特性的寶可夢"
+    }
+  },
+  "Items": {
+    "title": "道具",
+    "subtitle": "{count, plural, other {# 個道具}}",
+    "search": "搜尋道具…",
+    "back": "← 全部道具",
+    "categoryLabel": "類別:",
+    "categoryAll": "全部",
+    "categoryHeld": "攜帶道具",
+    "categoryChoice": "講究系",
+    "categoryBerry": "樹果",
+    "categoryMega": "超級石",
+    "categoryTypeBoost": "屬性強化",
+    "categoryMisc": "其他",
+    "empty": "未找到符合條件的道具。",
+    "columns": {
+      "name": "名稱",
+      "category": "類別",
+      "effect": "效果",
+      "usage": "使用率"
+    },
+    "detail": {
+      "description": "說明",
+      "stats": "數據"
+    }
+  },
+  "DamageCalc": {
+    "title": "傷害計算",
+    "subtitle": "亂數級精度,支援屬性相性。等級50,冠軍賽規則。",
+    "attacker": "攻擊方",
+    "defender": "防禦方",
+    "speciesLabel": "寶可夢",
+    "abilityLabel": "特性",
+    "itemLabel": "道具",
+    "moveLabel": "招式",
+    "field": "場地狀態",
+    "weather": "天氣",
+    "weatherNone": "—",
+    "weatherSun": "大晴天",
+    "weatherRain": "下雨",
+    "weatherSand": "沙暴",
+    "weatherSnow": "降雪",
+    "format": "對戰形式",
+    "formatSingles": "單打",
+    "formatDoubles": "雙打(範圍)",
+    "burn": "灼傷(攻擊方)",
+    "crit": "擊中要害",
+    "result": "結果",
+    "noResult": "請選擇攻擊方、防禦方與傷害招式。",
+    "minMax": "最小 – 最大",
+    "pctRange": "防禦方HP佔比",
+    "stab": "屬性一致",
+    "effectiveness": "相性",
+    "notes": "v1 暫未支援:能力等級、屏障、場地。後續完善。"
+  },
+  "TeamBuilder": {
+    "title": "隊伍構築",
+    "subtitle": "六個欄位。無需帳號。URL 即可分享隊伍。",
+    "slotEmpty": "空欄位",
+    "slotEmptyHint": "選擇寶可夢",
+    "addPokemon": "新增寶可夢",
+    "remove": "移除",
+    "speciesLabel": "寶可夢",
+    "abilityLabel": "特性",
+    "itemLabel": "道具",
+    "movesLabel": "招式",
+    "vpLabel": "勝利點 (VP)",
+    "vpRemaining": "剩餘 {remaining} VP",
+    "vpOver": "超出 {over} VP",
+    "vpStat": {
+      "hp": "HP", "atk": "攻擊", "def": "防禦", "spa": "特攻", "spd": "特防", "spe": "速度"
+    },
+    "share": "分享",
+    "copyLink": "複製連結",
+    "copied": "連結已複製!",
+    "open": "開啟",
+    "clear": "清空隊伍",
+    "format": "對戰形式",
+    "formatSingles": "單打",
+    "formatDoubles": "雙打",
+    "regulation": "規則",
+    "regulationMA": "規則 M-A",
+    "noItem": "(無道具)",
+    "moveSlot": "招式 {n}",
+    "moveNone": "(無)",
+    "coverage": "屬性覆蓋",
+    "coverageHint": "對每種屬性,隊伍中擁有至少一個效果絕佳招式的成員數。",
+    "defenseTitle": "隊伍防禦",
+    "offenseTitle": "隊伍進攻",
+    "offenseHint": "對每種屬性,每位成員所選攻擊招式中能造成的最高倍率。",
+    "noDamageMove": "—",
+    "weakColumn": "對此屬性弱點的成員數",
+    "resistColumn": "對此屬性半減/免疫的成員數",
+    "netColumn": "淨差 (半減數 − 弱點數)",
+    "offenseWeakColumn": "無效果絕佳招式的成員數",
+    "offenseStrongColumn": "有效果絕佳招式的成員數",
+    "loading": "載入中…",
+    "invalidShare": "分享連結解析失敗,從空隊伍開始。"
+  },
+  "Placeholder": {
+    "back": "返回主頁",
+    "moves": {
+      "title": "招式",
+      "phase": "階段 1",
+      "desc": "依屬性、分類、威力與命中篩選。階段 1 上線。"
+    },
+    "abilities": {
+      "title": "特性",
+      "phase": "階段 1",
+      "desc": "可搜尋的特性列表與說明。階段 1 上線。"
+    },
+    "items": {
+      "title": "道具",
+      "phase": "階段 1",
+      "desc": "攜帶道具、超級石、樹果 — 分類可篩選。階段 1 上線。"
+    },
+    "teamBuilder": {
+      "title": "隊伍構築",
+      "phase": "階段 1",
+      "desc": "六個欄位,URL 分享,無需註冊。核心功能,階段 1 接入。"
+    },
+    "teams": {
+      "title": "隊伍",
+      "phase": "階段 2",
+      "desc": "瀏覽賽事與社群隊伍。階段 2 上線。"
+    },
+    "damageCalc": {
+      "title": "傷害計算",
+      "phase": "階段 1",
+      "desc": "雙打、天氣、場地、屏障 — 與遊戲數值一致。階段 1 上線。"
+    }
+  },
+  "Types": {
+    "normal": "一般",
+    "fire": "火",
+    "water": "水",
+    "electric": "電",
+    "grass": "草",
+    "ice": "冰",
+    "fighting": "格鬥",
+    "poison": "毒",
+    "ground": "地面",
+    "flying": "飛行",
+    "psychic": "超能力",
+    "bug": "蟲",
+    "rock": "岩石",
+    "ghost": "幽靈",
+    "dragon": "龍",
+    "dark": "惡",
+    "steel": "鋼",
+    "fairy": "妖精"
+  },
+  "Footer": {
+    "tagline": "PokePoke · 寶可夢冠軍賽伴侶 · 僅種子資料 — 使用率僅供參考。"
+  },
+  "Meta": {
+    "title": "PokePoke — 寶可夢冠軍賽",
+    "description": "構築、分享並測試寶可夢冠軍賽隊伍。無需帳號。"
+  }
+}

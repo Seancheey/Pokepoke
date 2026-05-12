@@ -1,0 +1,284 @@
+{
+  "Nav": {
+    "brand": "PokePoke",
+    "section": "チャンピオンズ",
+    "pokemon": "ポケモン",
+    "moves": "わざ",
+    "abilities": "とくせい",
+    "items": "どうぐ",
+    "teamBuilder": "チーム作成",
+    "teams": "チーム一覧",
+    "damageCalc": "ダメージ計算",
+    "language": "言語"
+  },
+  "Hub": {
+    "regulationBadge": "レギュ M-A",
+    "regulationLabel": "現行レギュレーション",
+    "heroTitle": "数秒でポケモンチャンピオンズのチームを構築・共有・検証。",
+    "heroSubtitle": "アカウント不要。ログイン不要。URLでチームを共有。",
+    "ctaTeamBuilder": "チーム作成を開く →",
+    "ctaDamageCalc": "ダメージ計算",
+    "ctaTeams": "チームを見る",
+    "topByUsageTitle": "使用率トップ10",
+    "topByUsageSubtitle": "現行ルールで最もよく使われているポケモン。",
+    "seeFullList": "全リストを見る →",
+    "rankShort": "#{rank}",
+    "tools": {
+      "pokemon": {
+        "title": "ポケモン図鑑",
+        "desc": "タイプ・とくせい・わざ・使用率でフィルター可能。全種族値で並べ替え。"
+      },
+      "teamBuilder": {
+        "title": "チーム作成",
+        "desc": "6枠、URLで共有、登録不要。タイプ相性表とすばやさ順を内蔵。"
+      },
+      "damageCalc": {
+        "title": "ダメージ計算",
+        "desc": "Pikalyticsと一致する精度。ダブル・天候・フィールド・壁にも対応。"
+      }
+    },
+    "phaseCallout": "Phase 0 ビルド — シードデータのみ。実使用率データはPhase 2で接続予定。",
+    "phaseCalloutTag": "ご注意:"
+  },
+  "List": {
+    "title": "ポケモン",
+    "subtitle": "{count, plural, other {# 件}} · レギュレーションM-A",
+    "search": "ポケモンを検索…",
+    "typeLabel": "タイプ:",
+    "clear": "クリア",
+    "empty": "該当するポケモンがありません。フィルターを外してみてください。",
+    "clearFilters": "フィルターをクリア",
+    "columns": {
+      "dex": "No.",
+      "sprite": "画像",
+      "name": "なまえ",
+      "types": "タイプ",
+      "usage": "使用率",
+      "hp": "HP",
+      "atk": "こうげき",
+      "def": "ぼうぎょ",
+      "spa": "とくこう",
+      "spd": "とくぼう",
+      "spe": "すばやさ",
+      "bst": "合計"
+    }
+  },
+  "Detail": {
+    "back": "← ポケモン一覧",
+    "usage": "使用率:",
+    "rank": "順位:",
+    "bst": "合計:",
+    "baseStats": "種族値",
+    "abilities": "とくせい",
+    "hiddenSuffix": "(隠れ特性)",
+    "phase1Note": "わざプール、構築例、相棒、相性表はPhase 1で実装予定。"
+  },
+  "Moves": {
+    "title": "わざ",
+    "subtitle": "{count, plural, other {# 件のわざ}}",
+    "search": "わざを検索…",
+    "back": "← わざ一覧",
+    "categoryLabel": "分類:",
+    "categoryAll": "すべて",
+    "categoryPhysical": "物理",
+    "categorySpecial": "特殊",
+    "categoryStatus": "変化",
+    "typeLabel": "タイプ:",
+    "clear": "クリア",
+    "empty": "該当するわざがありません。",
+    "columns": {
+      "name": "なまえ",
+      "type": "タイプ",
+      "category": "分類",
+      "power": "威力",
+      "accuracy": "命中",
+      "pp": "PP",
+      "priority": "優先度",
+      "usage": "使用率"
+    },
+    "detail": {
+      "effect": "効果",
+      "stats": "性能",
+      "contact": "接触",
+      "yes": "あり",
+      "no": "なし",
+      "target": "対象",
+      "phase1Note": "覚えるポケモン一覧はPhase 1で順次追加。"
+    }
+  },
+  "Abilities": {
+    "title": "とくせい",
+    "subtitle": "{count, plural, other {# 件のとくせい}}",
+    "search": "とくせいを検索…",
+    "back": "← とくせい一覧",
+    "empty": "該当するとくせいがありません。",
+    "columns": {
+      "name": "なまえ",
+      "desc": "効果",
+      "usage": "使用率"
+    },
+    "detail": {
+      "description": "効果",
+      "stats": "性能",
+      "holders": "このとくせいを持つポケモン"
+    }
+  },
+  "Items": {
+    "title": "どうぐ",
+    "subtitle": "{count, plural, other {# 件のどうぐ}}",
+    "search": "どうぐを検索…",
+    "back": "← どうぐ一覧",
+    "categoryLabel": "カテゴリ:",
+    "categoryAll": "すべて",
+    "categoryHeld": "もちもの",
+    "categoryChoice": "こだわり系",
+    "categoryBerry": "きのみ",
+    "categoryMega": "メガストーン",
+    "categoryTypeBoost": "タイプ強化",
+    "categoryMisc": "その他",
+    "empty": "該当するどうぐがありません。",
+    "columns": {
+      "name": "なまえ",
+      "category": "カテゴリ",
+      "effect": "効果",
+      "usage": "使用率"
+    },
+    "detail": {
+      "description": "効果",
+      "stats": "性能"
+    }
+  },
+  "DamageCalc": {
+    "title": "ダメージ計算",
+    "subtitle": "乱数まで正確、タイプ相性対応。レベル50、チャンピオンズ準拠。",
+    "attacker": "攻撃側",
+    "defender": "防御側",
+    "speciesLabel": "ポケモン",
+    "abilityLabel": "とくせい",
+    "itemLabel": "もちもの",
+    "moveLabel": "わざ",
+    "field": "場の状態",
+    "weather": "天候",
+    "weatherNone": "—",
+    "weatherSun": "ひざしがつよい",
+    "weatherRain": "あめ",
+    "weatherSand": "すなあらし",
+    "weatherSnow": "ゆき",
+    "format": "フォーマット",
+    "formatSingles": "シングル",
+    "formatDoubles": "ダブル(範囲)",
+    "burn": "やけど(攻撃側)",
+    "crit": "急所",
+    "result": "結果",
+    "noResult": "攻撃側・防御側・ダメージ技を選択してください。",
+    "minMax": "最小 – 最大",
+    "pctRange": "防御側HP割合",
+    "stab": "タイプ一致",
+    "effectiveness": "相性",
+    "notes": "v1で省略:ランク補正、壁、フィールド設置技。今後のアップデートで対応。"
+  },
+  "TeamBuilder": {
+    "title": "チーム作成",
+    "subtitle": "6枠。アカウント不要。URLでチームを共有。",
+    "slotEmpty": "空き枠",
+    "slotEmptyHint": "ポケモンを選択",
+    "addPokemon": "ポケモンを追加",
+    "remove": "削除",
+    "speciesLabel": "ポケモン",
+    "abilityLabel": "とくせい",
+    "itemLabel": "もちもの",
+    "movesLabel": "わざ",
+    "vpLabel": "勝利ポイント (VP)",
+    "vpRemaining": "残り {remaining} VP",
+    "vpOver": "{over} VP オーバー",
+    "vpStat": {
+      "hp": "HP", "atk": "こうげき", "def": "ぼうぎょ", "spa": "とくこう", "spd": "とくぼう", "spe": "すばやさ"
+    },
+    "share": "共有",
+    "copyLink": "リンクをコピー",
+    "copied": "リンクをコピーしました!",
+    "open": "開く",
+    "clear": "チームをクリア",
+    "format": "フォーマット",
+    "formatSingles": "シングル",
+    "formatDoubles": "ダブル",
+    "regulation": "レギュレーション",
+    "regulationMA": "レギュ M-A",
+    "noItem": "(もちものなし)",
+    "moveSlot": "わざ {n}",
+    "moveNone": "(なし)",
+    "coverage": "タイプ相性",
+    "coverageHint": "各タイプに対して、効果バツグンの技を1つ以上持つ味方の数。",
+    "defenseTitle": "防御相性",
+    "offenseTitle": "攻撃相性",
+    "offenseHint": "各タイプに対する、各メンバーの最大ダメージ倍率(選択中の攻撃技から)。",
+    "noDamageMove": "—",
+    "weakColumn": "このタイプに弱いメンバー数",
+    "resistColumn": "このタイプを半減/無効にするメンバー数",
+    "netColumn": "差分 (半減数 − 弱点数)",
+    "offenseWeakColumn": "効果バツグン無しのメンバー数",
+    "offenseStrongColumn": "効果バツグン有りのメンバー数",
+    "loading": "読み込み中…",
+    "invalidShare": "共有リンクをデコードできませんでした。空のチームから始めます。"
+  },
+  "Placeholder": {
+    "back": "ハブに戻る",
+    "moves": {
+      "title": "わざ",
+      "phase": "Phase 1",
+      "desc": "タイプ・分類・威力・命中で検索。Phase 1で実装予定。"
+    },
+    "abilities": {
+      "title": "とくせい",
+      "phase": "Phase 1",
+      "desc": "とくせい一覧と説明、所持ポケモン。Phase 1で実装予定。"
+    },
+    "items": {
+      "title": "どうぐ",
+      "phase": "Phase 1",
+      "desc": "持ち物・メガストーン・きのみ。Phase 1で実装予定。"
+    },
+    "teamBuilder": {
+      "title": "チーム作成",
+      "phase": "Phase 1",
+      "desc": "6枠、URLで共有、登録不要。中核機能 — Phase 1で実装予定。"
+    },
+    "teams": {
+      "title": "チーム一覧",
+      "phase": "Phase 2",
+      "desc": "大会・コミュニティのチームを閲覧。Phase 2で実装予定。"
+    },
+    "damageCalc": {
+      "title": "ダメージ計算",
+      "phase": "Phase 1",
+      "desc": "ダブル・天候・フィールド・壁。乱数まで正確。Phase 1で実装予定。"
+    }
+  },
+  "Types": {
+    "normal": "ノーマル",
+    "fire": "ほのお",
+    "water": "みず",
+    "electric": "でんき",
+    "grass": "くさ",
+    "ice": "こおり",
+    "fighting": "かくとう",
+    "poison": "どく",
+    "ground": "じめん",
+    "flying": "ひこう",
+    "psychic": "エスパー",
+    "bug": "むし",
+    "rock": "いわ",
+    "ghost": "ゴースト",
+    "dragon": "ドラゴン",
+    "dark": "あく",
+    "steel": "はがね",
+    "fairy": "フェアリー"
+  },
+  "Footer": {
+    "tagline": "PokePoke · ポケモンチャンピオンズ コンパニオン · シードデータのみ — 使用率は参考値です。"
+  },
+  "Meta": {
+    "title": "PokePoke — ポケモンチャンピオンズ",
+    "description": "ポケモンチャンピオンズのチームを構築・共有・検証。アカウント不要。"
+  }
+}

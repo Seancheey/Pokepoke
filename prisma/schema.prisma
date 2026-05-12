@@ -1,0 +1,93 @@
+// PokePoke schema — dev uses SQLite; prod target is Postgres (swap provider + datasource url).
+// Most relation tables omitted in this phase; Phase 1 adds moves/abilities/items joins and usage snapshots.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Pokemon {
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  dexNo       Int
+  name        String
+  // JSON map of locale → localized display name. SQLite stores as TEXT.
+  nameI18n    String   @default("{}")
+  type1       String
+  type2       String?
+  hp          Int
+  atk         Int
+  def         Int
+  spa         Int
+  spd         Int
+  spe         Int
+  abilities   String   // JSON-encoded array of ability slugs (SQLite has no native array)
+  hiddenAbility String?
+  spriteUrl   String
+  // JSON array of move slugs this Pokémon can learn (denormalized from pokemon_moves).
+  learnableMoves String @default("[]")
+  // JSON blob of competitive usage stats from Smogon chaos dump.
+  // Shape: { topMoves:[{slug,pct}], topAbilities:[{slug,pct}], topItems:[{slug,pct}],
+  //          topSpreads:[{nature,vp:[hp,atk,def,spa,spd,spe],pct}], source:string }
+  usageStats String @default("{}")
+  usagePct    Float    @default(0)
+  rank        Int?
+  regulations String   // JSON-encoded array of regulation slugs this mon is legal in
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Move {
+  id          Int     @id @default(autoincrement())
+  slug        String  @unique
+  name        String
+  nameI18n    String  @default("{}")
+  type        String
+  category    String  // physical | special | status
+  power       Int?
+  accuracy    Int?
+  pp          Int
+  priority    Int     @default(0)
+  targetShape String  // single | spread | self | all-adjacent etc.
+  makesContact Boolean @default(false)
+  effectText  String
+  effectI18n  String  @default("{}")
+  effectChance Int?
+  usagePct    Float   @default(0)
+}
+
+model Ability {
+  id        Int     @id @default(autoincrement())
+  slug      String  @unique
+  name      String
+  nameI18n  String  @default("{}")
+  shortDesc String
+  shortDescI18n String @default("{}")
+  longDesc  String
+  usagePct  Float   @default(0)
+}
+
+model Item {
+  id          Int     @id @default(autoincrement())
+  slug        String  @unique
+  name        String
+  nameI18n    String  @default("{}")
+  category    String  // held | mega-stone | berry | type-boost | choice | misc
+  description String
+  descI18n    String  @default("{}")
+  usagePct    Float   @default(0)
+}
+
+model Regulation {
+  id        Int     @id @default(autoincrement())
+  slug      String  @unique
+  name      String
+  maxVp     Int
+  allowTera Boolean @default(false)
+  validFrom DateTime
+  validTo   DateTime?
+}
