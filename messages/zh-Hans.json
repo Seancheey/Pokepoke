@@ -189,6 +189,9 @@
     "itemLabel": "道具",
     "movesLabel": "招式",
     "vpLabel": "胜利点 (VP)",
+    "spreadPresetLabel": "努力值方案",
+    "spreadPresetPlaceholder": "选择方案…",
+    "customSpread": "自定义",
     "vpRemaining": "剩余 {remaining} VP",
     "vpOver": "超出 {over} VP",
     "vpStat": {

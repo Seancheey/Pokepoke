@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { TypeChip } from "@/components/TypeChip";
+import { Combobox, type ComboboxOption } from "@/components/Combobox";
 import type { PokemonType } from "@/lib/types";
 import { POKEMON_TYPES } from "@/lib/types";
 import { effectivenessAgainst } from "@/lib/type-chart";
@@ -27,6 +28,7 @@ export type RefPokemon = {
   hiddenAbility: string | null;
   hp: number; atk: number; def: number; spa: number; spd: number; spe: number;
   learnableMoves: string[];
+  usagePct: number;
   usage: PokemonUsage | null;
 };
 
@@ -267,29 +269,49 @@ function AddSlotPicker({
   onPick: (slug: string) => void;
 }) {
   const t = useTranslations("TeamBuilder");
-  const [val, setVal] = useState("");
+
+  const options: ComboboxOption[] = useMemo(
+    () =>
+      pokemon.map((p) => ({
+        value: p.slug,
+        label: p.name,
+        searchText: p.slug, // allow english slug search even when UI is JA / zh
+        usagePct: p.usagePct > 0 ? p.usagePct : undefined,
+        prefix: (
+          <Image
+            src={p.spriteUrl}
+            alt=""
+            width={24}
+            height={24}
+            unoptimized
+            className="h-6 w-6 object-contain"
+          />
+        ),
+        suffix: (
+          <span className="ml-1 inline-flex gap-1">
+            <TypeChip type={p.type1 as PokemonType} size="sm" />
+            {p.type2 ? <TypeChip type={p.type2 as PokemonType} size="sm" /> : null}
+          </span>
+        ),
+      })),
+    [pokemon],
+  );
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-zinc-300 bg-white/60 p-6 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
-      <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">{t("addPokemon")}</p>
-      <select
-        value={val}
-        onChange={(e) => {
-          const v = e.target.value;
-          if (v) {
-            onPick(v);
-            setVal("");
-          }
-        }}
-        className="w-full max-w-xs rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
-      >
-        <option value="">{t("slotEmptyHint")}</option>
-        {pokemon.map((p) => (
-          <option key={p.slug} value={p.slug}>
-            {p.name}
-          </option>
-        ))}
-      </select>
+      <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">
+        {t("addPokemon")}
+      </p>
+      <div className="w-full max-w-md">
+        <Combobox
+          value=""
+          options={options}
+          onChange={(slug) => slug && onPick(slug)}
+          placeholder={t("slotEmptyHint")}
+          searchPlaceholder={t("slotEmptyHint")}
+          ariaLabel={t("addPokemon")}
+        />
+      </div>
     </div>
   );
 }
@@ -377,121 +399,228 @@ function SlotCard({
         </button>
       </header>
 
-      <div className="mt-3 space-y-2 text-sm">
-        <Field label={t("abilityLabel")}>
-          <select
-            value={slot.a ?? ""}
-            onChange={(e) => onMutate((s) => ({ ...s, a: e.target.value }))}
-            className="w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-          >
-            {validAbilities.map((a) => {
-              const ref = abilityBySlug.get(a);
-              return (
-                <option key={a} value={a}>
-                  {ref?.name ?? a}
-                  {p.hiddenAbility === a ? " ★" : ""}
-                </option>
-              );
-            })}
-          </select>
-        </Field>
+      <SlotBody
+        p={p}
+        slot={slot}
+        vp={vp}
+        remaining={remaining}
+        validAbilities={validAbilities}
+        abilityBySlug={abilityBySlug}
+        items={items}
+        moves={moves}
+        onMutate={onMutate}
+        setMove={setMove}
+        setStat={setStat}
+      />
+    </article>
+  );
+}
 
-        <Field label={t("itemLabel")}>
-          <select
-            value={slot.i ?? ""}
-            onChange={(e) =>
-              onMutate((s) => ({ ...s, i: e.target.value || undefined }))
-            }
-            className="w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-          >
-            <option value="">{t("noItem")}</option>
-            {items.map((it) => (
-              <option key={it.slug} value={it.slug}>
-                {it.name}
-              </option>
-            ))}
-          </select>
-        </Field>
+// ─────────────────────────────────────────────────────────────────────────────
 
-        <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-            {t("movesLabel")}
-          </div>
-          {(() => {
-            const learnable = new Set(p.learnableMoves);
-            const filtered = moves.filter((m) => learnable.has(m.slug));
-            return (
-              <div className="mt-1 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                {[0, 1, 2, 3].map((mi) => {
-                  const cur = (slot.m ?? [])[mi] ?? "";
-                  // If the currently-selected move isn't in the learnset (e.g. species changed),
-                  // include it in the dropdown anyway so the user can see/remove it.
-                  const options = cur && !learnable.has(cur)
-                    ? [...filtered, moves.find((m) => m.slug === cur)!].filter(Boolean)
-                    : filtered;
-                  return (
-                    <select
-                      key={mi}
-                      value={cur}
-                      onChange={(e) => setMove(mi, e.target.value)}
-                      className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
-                    >
-                      <option value="">{t("moveNone")}</option>
-                      {options.map((m) => (
-                        <option key={m.slug} value={m.slug}>
-                          {m.name}
-                        </option>
-                      ))}
-                    </select>
-                  );
-                })}
-              </div>
-            );
-          })()}
+function SlotBody({
+  p,
+  slot,
+  vp,
+  remaining,
+  validAbilities,
+  abilityBySlug,
+  items,
+  moves,
+  onMutate,
+  setMove,
+  setStat,
+}: {
+  p: RefPokemon;
+  slot: ShareSlot;
+  vp: number[];
+  remaining: number;
+  validAbilities: string[];
+  abilityBySlug: Map<string, RefAbility>;
+  items: RefItem[];
+  moves: RefMove[];
+  onMutate: (mut: (s: ShareSlot) => ShareSlot) => void;
+  setMove: (slotIdx: number, val: string) => void;
+  setStat: (idx: number, val: number) => void;
+}) {
+  const t = useTranslations("TeamBuilder");
+  const tStat = useTranslations("TeamBuilder.vpStat");
+
+  // Per-slot usage lookups (top moves/abilities/items/spreads with %)
+  const pctByMove = new Map(p.usage?.topMoves.map((m) => [m.slug, m.pct]) ?? []);
+  const pctByAbility = new Map(
+    p.usage?.topAbilities.map((a) => [a.slug, a.pct]) ?? [],
+  );
+  const pctByItem = new Map(p.usage?.topItems.map((i) => [i.slug, i.pct]) ?? []);
+
+  // Ability combobox options — limited to this species' valid abilities.
+  const abilityOptions: ComboboxOption[] = validAbilities.map((a) => {
+    const ref = abilityBySlug.get(a);
+    return {
+      value: a,
+      label: ref?.name ?? a,
+      searchText: a,
+      usagePct: pctByAbility.get(a),
+      suffix: p.hiddenAbility === a ? "★" : null,
+    };
+  });
+
+  // Item combobox options — all items, with this species' usage % when known.
+  const itemOptions: ComboboxOption[] = items.map((it) => ({
+    value: it.slug,
+    label: it.name,
+    searchText: it.slug,
+    usagePct: pctByItem.get(it.slug),
+  }));
+
+  // Move combobox options — restricted to this species' learnset.
+  const learnable = new Set(p.learnableMoves);
+  const learnableMoves = moves.filter((m) => learnable.has(m.slug));
+  const moveOptionsBase: ComboboxOption[] = learnableMoves.map((m) => ({
+    value: m.slug,
+    label: m.name,
+    searchText: m.slug,
+    usagePct: pctByMove.get(m.slug),
+  }));
+
+  // Spread preset options
+  const spreadPresets = p.usage?.topSpreads ?? [];
+  const currentSpreadKey = vp.join("-");
+  const presetMatch = spreadPresets.find((s) => s.vp.join("-") === currentSpreadKey);
+  const spreadOptions: ComboboxOption[] = spreadPresets.map((s) => {
+    const key = `${s.nature}:${s.vp.join("/")}`;
+    return {
+      value: key,
+      label: `${s.nature} ${s.vp.join("/")}`,
+      usagePct: s.pct,
+    };
+  });
+
+  function applySpread(key: string) {
+    const [nature, evs] = key.split(":");
+    if (!nature || !evs) return;
+    const parts = evs.split("/").map((s) => parseInt(s, 10));
+    if (parts.length !== 6) return;
+    onMutate((s) => ({
+      ...s,
+      v: parts as [number, number, number, number, number, number],
+    }));
+  }
+
+  return (
+    <div className="mt-3 space-y-2 text-sm">
+      <Field label={t("abilityLabel")}>
+        <Combobox
+          value={slot.a ?? ""}
+          options={abilityOptions}
+          onChange={(v) => onMutate((s) => ({ ...s, a: v }))}
+          ariaLabel={t("abilityLabel")}
+        />
+      </Field>
+
+      <Field label={t("itemLabel")}>
+        <Combobox
+          value={slot.i ?? ""}
+          options={itemOptions}
+          onChange={(v) => onMutate((s) => ({ ...s, i: v || undefined }))}
+          ariaLabel={t("itemLabel")}
+          allowClear
+          emptyLabel={t("noItem")}
+          placeholder={t("noItem")}
+        />
+      </Field>
+
+      <div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          {t("movesLabel")}
         </div>
-
-        {/* VP sliders */}
-        <div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold uppercase tracking-wider text-zinc-500">
-              {t("vpLabel")}
-            </span>
-            <span
-              className={cn(
-                "font-mono tabular-nums",
-                remaining < 0
-                  ? "font-bold text-red-600"
-                  : remaining === 0
-                  ? "text-emerald-600"
-                  : "text-zinc-500",
-              )}
-            >
-              {remaining < 0
-                ? t("vpOver", { over: -remaining })
-                : t("vpRemaining", { remaining })}
-            </span>
-          </div>
-          <div className="mt-1 grid grid-cols-2 gap-1.5">
-            {STAT_KEYS.map((k, i) => (
-              <label key={k} className="flex items-center gap-1.5 text-xs">
-                <span className="w-10 shrink-0 font-semibold uppercase tracking-wider text-zinc-500">
-                  {tStat(k as StatKey)}
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  max={PER_STAT_CAP}
-                  step={4}
-                  value={vp[i] ?? 0}
-                  onChange={(e) => setStat(i, parseInt(e.target.value) || 0)}
-                  className="w-full rounded-md border border-zinc-300 bg-white px-1.5 py-0.5 text-right font-mono tabular-nums dark:border-zinc-700 dark:bg-zinc-900"
-                />
-              </label>
-            ))}
-          </div>
+        <div className="mt-1 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+          {[0, 1, 2, 3].map((mi) => {
+            const cur = (slot.m ?? [])[mi] ?? "";
+            // If current move isn't in the learnset (e.g. user changed species), include it
+            // anyway so the selection is visible and removable.
+            const options =
+              cur && !learnable.has(cur)
+                ? [
+                    ...moveOptionsBase,
+                    (() => {
+                      const m = moves.find((mm) => mm.slug === cur);
+                      return m
+                        ? { value: m.slug, label: m.name, searchText: m.slug }
+                        : null;
+                    })(),
+                  ].filter((x): x is ComboboxOption => !!x)
+                : moveOptionsBase;
+            return (
+              <Combobox
+                key={mi}
+                value={cur}
+                options={options}
+                onChange={(v) => setMove(mi, v)}
+                ariaLabel={t("moveSlot", { n: mi + 1 })}
+                allowClear
+                emptyLabel={t("moveNone")}
+                placeholder={t("moveNone")}
+              />
+            );
+          })}
         </div>
       </div>
-    </article>
+
+      {/* Spread preset */}
+      {spreadOptions.length > 0 ? (
+        <Field label={t("spreadPresetLabel")}>
+          <Combobox
+            value={presetMatch ? `${presetMatch.nature}:${presetMatch.vp.join("/")}` : ""}
+            options={spreadOptions}
+            onChange={applySpread}
+            placeholder={t("spreadPresetPlaceholder")}
+            ariaLabel={t("spreadPresetLabel")}
+          />
+        </Field>
+      ) : null}
+
+      {/* VP inputs */}
+      <div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-semibold uppercase tracking-wider text-zinc-500">
+            {t("vpLabel")}
+          </span>
+          <span
+            className={cn(
+              "font-mono tabular-nums",
+              remaining < 0
+                ? "font-bold text-red-600"
+                : remaining === 0
+                ? "text-emerald-600"
+                : "text-zinc-500",
+            )}
+          >
+            {remaining < 0
+              ? t("vpOver", { over: -remaining })
+              : t("vpRemaining", { remaining })}
+          </span>
+        </div>
+        <div className="mt-1 grid grid-cols-2 gap-1.5">
+          {STAT_KEYS.map((k, i) => (
+            <label key={k} className="flex items-center gap-1.5 text-xs">
+              <span className="w-10 shrink-0 font-semibold uppercase tracking-wider text-zinc-500">
+                {tStat(k as StatKey)}
+              </span>
+              <input
+                type="number"
+                min={0}
+                max={PER_STAT_CAP}
+                step={4}
+                value={vp[i] ?? 0}
+                onChange={(e) => setStat(i, parseInt(e.target.value) || 0)}
+                className="w-full rounded-md border border-zinc-300 bg-white px-1.5 py-0.5 text-right font-mono tabular-nums dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 

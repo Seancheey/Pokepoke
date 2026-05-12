@@ -189,6 +189,9 @@
     "itemLabel": "Item",
     "movesLabel": "Moves",
     "vpLabel": "Victory Points (VP)",
+    "spreadPresetLabel": "Spread preset",
+    "spreadPresetPlaceholder": "Pick a spread…",
+    "customSpread": "Custom",
     "vpRemaining": "{remaining} VP remaining",
     "vpOver": "Over by {over} VP",
     "vpStat": {

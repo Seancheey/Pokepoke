@@ -189,6 +189,9 @@
     "itemLabel": "もちもの",
     "movesLabel": "わざ",
     "vpLabel": "勝利ポイント (VP)",
+    "spreadPresetLabel": "努力値プリセット",
+    "spreadPresetPlaceholder": "プリセットを選択…",
+    "customSpread": "カスタム",
     "vpRemaining": "残り {remaining} VP",
     "vpOver": "{over} VP オーバー",
     "vpStat": {
