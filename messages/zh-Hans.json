@@ -288,6 +288,22 @@
       "desc": "双打、天气、场地、屏障 — 与游戏数值一致。阶段 1 上线。"
     }
   },
+  "Natures": {
+    "Hardy": "勤奋", "Lonely": "怕寂寞", "Adamant": "固执",
+    "Naughty": "顽皮", "Brave": "勇敢",
+    "Bold": "大胆", "Docile": "坦率", "Impish": "淘气",
+    "Lax": "乐天", "Relaxed": "悠闲",
+    "Modest": "内敛", "Mild": "慢吞吞", "Bashful": "害羞",
+    "Rash": "马虎", "Quiet": "冷静",
+    "Calm": "温和", "Gentle": "温顺", "Careful": "慎重",
+    "Sassy": "自大", "Quirky": "浮躁",
+    "Timid": "胆小", "Hasty": "急躁", "Jolly": "爽朗",
+    "Naive": "天真", "Serious": "认真",
+    "neutralSuffix": "(无变化)"
+  },
+  "StatShort": {
+    "atk": "攻击", "def": "防御", "spa": "特攻", "spd": "特防", "spe": "速度"
+  },
   "Types": {
     "normal": "一般",
     "fire": "火",

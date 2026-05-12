@@ -63,6 +63,12 @@ const NATURE_TABLE: Record<Nature, [StatKey | null, StatKey | null]> = {
 
 export const NATURES: readonly Nature[] = Object.keys(NATURE_TABLE) as Nature[];
 
+/** Returns the stat raised (+10%) and lowered (-10%) by a nature, or nulls for neutral. */
+export function natureEffect(nat: Nature): { up: StatKey | null; down: StatKey | null } {
+  const [up, down] = NATURE_TABLE[nat];
+  return { up, down };
+}
+
 function natureMult(nat: Nature, stat: StatKey): number {
   const [up, down] = NATURE_TABLE[nat];
   if (up === stat) return 1.1;

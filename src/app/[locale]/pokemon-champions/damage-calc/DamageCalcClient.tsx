@@ -9,6 +9,7 @@ import type { PokemonType } from "@/lib/types";
 import {
   calc,
   NATURES,
+  natureEffect,
   type Weather,
   type Terrain,
   type Status,
@@ -354,6 +355,8 @@ function SidePanel({
   isAttacker?: boolean;
 }) {
   const t = useTranslations("DamageCalc");
+  const tNature = useTranslations("Natures");
+  const tStat = useTranslations("StatShort");
 
   const pctByAbility = new Map(mon?.usage?.topAbilities.map((a) => [a.slug, a.pct]) ?? []);
   const pctByItem = new Map(mon?.usage?.topItems.map((i) => [i.slug, i.pct]) ?? []);
@@ -375,10 +378,19 @@ function SidePanel({
     usagePct: pctByItem.get(it.slug),
   }));
 
-  const natureOptions: ComboboxOption[] = NATURES.map((n) => ({
-    value: n,
-    label: n,
-  }));
+  const natureOptions: ComboboxOption[] = NATURES.map((n) => {
+    const { up, down } = natureEffect(n);
+    const localized = tNature(n as never);
+    const effectText = up && down
+      ? ` +${tStat(up)} −${tStat(down)}`
+      : ` ${tNature("neutralSuffix")}`;
+    return {
+      value: n,
+      label: localized + effectText,
+      // Allow searching by raw English name even when UI is non-English.
+      searchText: `${n.toLowerCase()} ${localized}`,
+    };
+  });
 
   const statuses: Status[] = ["none", "burn", "paralysis", "poison", "toxic", "sleep", "freeze"];
   const statusOptions: ComboboxOption[] = statuses.map((s) => ({

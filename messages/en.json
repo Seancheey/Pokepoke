@@ -288,6 +288,22 @@
       "desc": "Doubles, weather, terrain, screens. Roll-accurate. Lands in Phase 1."
     }
   },
+  "Natures": {
+    "Hardy": "Hardy", "Lonely": "Lonely", "Adamant": "Adamant",
+    "Naughty": "Naughty", "Brave": "Brave",
+    "Bold": "Bold", "Docile": "Docile", "Impish": "Impish",
+    "Lax": "Lax", "Relaxed": "Relaxed",
+    "Modest": "Modest", "Mild": "Mild", "Bashful": "Bashful",
+    "Rash": "Rash", "Quiet": "Quiet",
+    "Calm": "Calm", "Gentle": "Gentle", "Careful": "Careful",
+    "Sassy": "Sassy", "Quirky": "Quirky",
+    "Timid": "Timid", "Hasty": "Hasty", "Jolly": "Jolly",
+    "Naive": "Naive", "Serious": "Serious",
+    "neutralSuffix": "(neutral)"
+  },
+  "StatShort": {
+    "atk": "Atk", "def": "Def", "spa": "SpA", "spd": "SpD", "spe": "Spe"
+  },
   "Types": {
     "normal": "Normal",
     "fire": "Fire",
