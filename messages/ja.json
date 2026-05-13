@@ -37,8 +37,7 @@
         "desc": "Pikalyticsと一致する精度。ダブル・天候・フィールド・壁にも対応。"
       }
     },
-    "phaseCallout": "Phase 0 ビルド — シードデータのみ。実使用率データはPhase 2で接続予定。",
-    "phaseCalloutTag": "ご注意:"
+    "dataNote": "使用率データは参考値です。公開されている対戦データから定期的に更新します。"
   },
   "List": {
     "title": "ポケモン",
@@ -71,7 +70,6 @@
     "baseStats": "種族値",
     "abilities": "とくせい",
     "hiddenSuffix": "(隠れ特性)",
-    "phase1Note": "わざプール、構築例、相棒、相性表はPhase 1で実装予定。",
     "learnset": "覚えられるわざ",
     "learnsetCount": "{count, plural, other {# 件}}",
     "learnsetSearch": "わざを絞り込む…"
@@ -105,8 +103,7 @@
       "contact": "接触",
       "yes": "あり",
       "no": "なし",
-      "target": "対象",
-      "phase1Note": "覚えるポケモン一覧はPhase 1で順次追加。"
+      "target": "対象"
     }
   },
   "Abilities": {
@@ -260,35 +257,9 @@
   },
   "Placeholder": {
     "back": "ハブに戻る",
-    "moves": {
-      "title": "わざ",
-      "phase": "Phase 1",
-      "desc": "タイプ・分類・威力・命中で検索。Phase 1で実装予定。"
-    },
-    "abilities": {
-      "title": "とくせい",
-      "phase": "Phase 1",
-      "desc": "とくせい一覧と説明、所持ポケモン。Phase 1で実装予定。"
-    },
-    "items": {
-      "title": "どうぐ",
-      "phase": "Phase 1",
-      "desc": "持ち物・メガストーン・きのみ。Phase 1で実装予定。"
-    },
-    "teamBuilder": {
-      "title": "チーム作成",
-      "phase": "Phase 1",
-      "desc": "6枠、URLで共有、登録不要。中核機能 — Phase 1で実装予定。"
-    },
     "teams": {
       "title": "チーム一覧",
-      "phase": "Phase 2",
-      "desc": "大会・コミュニティのチームを閲覧。Phase 2で実装予定。"
-    },
-    "damageCalc": {
-      "title": "ダメージ計算",
-      "phase": "Phase 1",
-      "desc": "ダブル・天候・フィールド・壁。乱数まで正確。Phase 1で実装予定。"
+      "desc": "大会・コミュニティのチームを閲覧。準備中です。"
     }
   },
   "Natures": {

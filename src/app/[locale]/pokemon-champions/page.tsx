@@ -126,12 +126,6 @@ export default async function HubPage({
         />
       </section>
 
-      <section className="mt-12 rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
-        <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-          {t("phaseCalloutTag")}
-        </span>{" "}
-        {t("phaseCallout")}
-      </section>
     </main>
   );
 }

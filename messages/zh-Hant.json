@@ -37,8 +37,7 @@
         "desc": "與 Pikalytics 數值一致。支援雙打、天氣、場地、屏障。"
       }
     },
-    "phaseCallout": "階段 0 建置 — 僅種子資料。實時使用率資料將在階段 2 接入。",
-    "phaseCalloutTag": "注意:"
+    "dataNote": "使用率資料僅供參考,定期從公開對戰資料更新。"
   },
   "List": {
     "title": "寶可夢",
@@ -71,7 +70,6 @@
     "baseStats": "種族值",
     "abilities": "特性",
     "hiddenSuffix": "(隱藏特性)",
-    "phase1Note": "招式池、配置範例、搭檔與屬性相剋表將在階段 1 上線。",
     "learnset": "可學會的招式",
     "learnsetCount": "{count, plural, other {# 個}}",
     "learnsetSearch": "篩選招式…"
@@ -105,8 +103,7 @@
       "contact": "接觸",
       "yes": "是",
       "no": "否",
-      "target": "目標",
-      "phase1Note": "可習得寶可夢清單將在階段 1 內補充。"
+      "target": "目標"
     }
   },
   "Abilities": {
@@ -260,35 +257,9 @@
   },
   "Placeholder": {
     "back": "返回主頁",
-    "moves": {
-      "title": "招式",
-      "phase": "階段 1",
-      "desc": "依屬性、分類、威力與命中篩選。階段 1 上線。"
-    },
-    "abilities": {
-      "title": "特性",
-      "phase": "階段 1",
-      "desc": "可搜尋的特性列表與說明。階段 1 上線。"
-    },
-    "items": {
-      "title": "道具",
-      "phase": "階段 1",
-      "desc": "攜帶道具、超級石、樹果 — 分類可篩選。階段 1 上線。"
-    },
-    "teamBuilder": {
-      "title": "隊伍構築",
-      "phase": "階段 1",
-      "desc": "六個欄位,URL 分享,無需註冊。核心功能,階段 1 接入。"
-    },
     "teams": {
       "title": "隊伍",
-      "phase": "階段 2",
-      "desc": "瀏覽賽事與社群隊伍。階段 2 上線。"
-    },
-    "damageCalc": {
-      "title": "傷害計算",
-      "phase": "階段 1",
-      "desc": "雙打、天氣、場地、屏障 — 與遊戲數值一致。階段 1 上線。"
+      "desc": "瀏覽賽事與社群隊伍。功能籌備中。"
     }
   },
   "Natures": {

@@ -6,6 +6,7 @@ import { TypeChip } from "@/components/TypeChip";
 import type { PokemonType } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
 import { localizedMoveName, localizedMoveEffect } from "@/lib/i18n-pokemon";
+import { CategoryBadge } from "@/components/CategoryBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -64,24 +65,7 @@ export default async function MoveDetailPage({
             </div>
           ))}
         </dl>
-        <p className="mt-4 text-xs text-zinc-500">{td("phase1Note")}</p>
       </section>
     </main>
-  );
-}
-
-function CategoryBadge({ cat }: { cat: string }) {
-  const color =
-    cat === "physical"
-      ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200"
-      : cat === "special"
-      ? "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200"
-      : "bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200";
-  return (
-    <span
-      className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${color}`}
-    >
-      {cat}
-    </span>
   );
 }

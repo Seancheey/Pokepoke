@@ -5,6 +5,7 @@ import { TypeChip } from "@/components/TypeChip";
 import { POKEMON_TYPES, type PokemonType } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
 import { localizedMoveName, localizedMoveEffect } from "@/lib/i18n-pokemon";
+import { CategoryBadge } from "@/components/CategoryBadge";
 import { MovesFilters } from "./MovesFilters";
 import { MovesSortHeader } from "./MovesSortHeader";
 
@@ -139,22 +140,6 @@ export default async function MovesListPage({
         </table>
       </div>
     </main>
-  );
-}
-
-function CategoryBadge({ cat }: { cat: string }) {
-  const color =
-    cat === "physical"
-      ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200"
-      : cat === "special"
-      ? "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200"
-      : "bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200";
-  return (
-    <span
-      className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${color}`}
-    >
-      {cat}
-    </span>
   );
 }
 

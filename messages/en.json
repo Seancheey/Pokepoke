@@ -37,8 +37,7 @@
         "desc": "Roll-accurate against Pikalytics. Doubles, weather, terrain, screens."
       }
     },
-    "phaseCallout": "Phase 0 build — seed data only. Live usage data wires up in Phase 2.",
-    "phaseCalloutTag": "Heads up:"
+    "dataNote": "Usage data is illustrative and refreshes from public competitive sources."
   },
   "List": {
     "title": "Pokémon",
@@ -71,7 +70,6 @@
     "baseStats": "Base stats",
     "abilities": "Abilities",
     "hiddenSuffix": "(hidden)",
-    "phase1Note": "Movepool, top sets, teammates, and matchup grid land in Phase 1.",
     "learnset": "Learnable moves",
     "learnsetCount": "{count, plural, =1 {1 move} other {# moves}}",
     "learnsetSearch": "Filter moves…"
@@ -105,8 +103,7 @@
       "contact": "Contact",
       "yes": "Yes",
       "no": "No",
-      "target": "Target",
-      "phase1Note": "Learnset table lands later in Phase 1."
+      "target": "Target"
     }
   },
   "Abilities": {
@@ -260,35 +257,9 @@
   },
   "Placeholder": {
     "back": "Back to hub",
-    "moves": {
-      "title": "Moves",
-      "phase": "Phase 1",
-      "desc": "Browse moves by type, category, power, and accuracy. Lands in Phase 1."
-    },
-    "abilities": {
-      "title": "Abilities",
-      "phase": "Phase 1",
-      "desc": "Searchable ability list with descriptions and holders. Lands in Phase 1."
-    },
-    "items": {
-      "title": "Items",
-      "phase": "Phase 1",
-      "desc": "Held items, mega stones, berries — categorized and filterable. Lands in Phase 1."
-    },
-    "teamBuilder": {
-      "title": "Team Builder",
-      "phase": "Phase 1",
-      "desc": "Six slots, share via URL, no signup. The headline feature — wired up in Phase 1."
-    },
     "teams": {
       "title": "Teams",
-      "phase": "Phase 2",
-      "desc": "Browse tournament and community teams. Lands in Phase 2."
-    },
-    "damageCalc": {
-      "title": "Damage Calculator",
-      "phase": "Phase 1",
-      "desc": "Doubles, weather, terrain, screens. Roll-accurate. Lands in Phase 1."
+      "desc": "Browse tournament and community teams. Coming soon."
     }
   },
   "Natures": {

@@ -37,8 +37,7 @@
         "desc": "与 Pikalytics 数据一致。支持双打、天气、场地、屏障。"
       }
     },
-    "phaseCallout": "阶段 0 构建 — 仅种子数据。实时使用率数据将在阶段 2 接入。",
-    "phaseCalloutTag": "提示:"
+    "dataNote": "使用率数据仅供参考,定期从公开对战数据更新。"
   },
   "List": {
     "title": "宝可梦",
@@ -71,7 +70,6 @@
     "baseStats": "种族值",
     "abilities": "特性",
     "hiddenSuffix": "(隐藏特性)",
-    "phase1Note": "招式池、配置范例、搭档与属性相性表将在阶段 1 上线。",
     "learnset": "能学会的招式",
     "learnsetCount": "{count, plural, other {# 个}}",
     "learnsetSearch": "筛选招式…"
@@ -105,8 +103,7 @@
       "contact": "接触",
       "yes": "是",
       "no": "否",
-      "target": "目标",
-      "phase1Note": "可习得宝可梦清单将在阶段 1 内补充。"
+      "target": "目标"
     }
   },
   "Abilities": {
@@ -260,35 +257,9 @@
   },
   "Placeholder": {
     "back": "返回主页",
-    "moves": {
-      "title": "招式",
-      "phase": "阶段 1",
-      "desc": "按属性、分类、威力与命中筛选。阶段 1 上线。"
-    },
-    "abilities": {
-      "title": "特性",
-      "phase": "阶段 1",
-      "desc": "可搜索的特性列表与说明。阶段 1 上线。"
-    },
-    "items": {
-      "title": "道具",
-      "phase": "阶段 1",
-      "desc": "携带道具、超级石、树果 — 分类可筛选。阶段 1 上线。"
-    },
-    "teamBuilder": {
-      "title": "队伍构筑",
-      "phase": "阶段 1",
-      "desc": "六个槽位,URL 分享,无需注册。核心功能,阶段 1 接入。"
-    },
     "teams": {
       "title": "队伍",
-      "phase": "阶段 2",
-      "desc": "浏览赛事与社区队伍。阶段 2 上线。"
-    },
-    "damageCalc": {
-      "title": "伤害计算",
-      "phase": "阶段 1",
-      "desc": "双打、天气、场地、屏障 — 与游戏数值一致。阶段 1 上线。"
+      "desc": "浏览赛事与社区队伍。功能筹备中。"
     }
   },
   "Natures": {
