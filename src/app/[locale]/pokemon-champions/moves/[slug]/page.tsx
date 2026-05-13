@@ -33,7 +33,12 @@ export default async function MoveDetailPage({
   // in the `learnableMoves` array, so the substring match `"foo"` is safe —
   // it can't false-match a prefix or suffix of another slug.
   const learners = await prisma.pokemon.findMany({
-    where: { learnableMoves: { contains: `"${slug}"` } },
+    where: {
+      AND: [
+        { learnableMoves: { contains: `"${slug}"` } },
+        { games: { contains: '"pokemon-champions"' } },
+      ],
+    },
     orderBy: [
       { rank: { sort: "asc", nulls: "last" } },
       { dexNo: "asc" },

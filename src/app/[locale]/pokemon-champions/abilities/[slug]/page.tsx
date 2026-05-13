@@ -26,10 +26,12 @@ export default async function AbilityDetailPage({
   const ability = await prisma.ability.findUnique({ where: { slug } });
   if (!ability) notFound();
 
-  // Holders: filter in JS because SQLite has no array-contains operator on the
-  // abilities text field. With ~20 mons this is fine; once on Postgres we'd swap
-  // to a `string_to_array(abilities, ',')` or JSONB query.
-  const allMons = await prisma.pokemon.findMany();
+  // Holders: filter in JS because we'd need a JSON-array-contains query for
+  // both the abilities slugs AND the hidden ability. With ~232 Champions-roster
+  // mons this is cheap.
+  const allMons = await prisma.pokemon.findMany({
+    where: { games: { contains: '"pokemon-champions"' } },
+  });
   const holders = allMons.filter((m) => {
     try {
       const list: string[] = JSON.parse(m.abilities);

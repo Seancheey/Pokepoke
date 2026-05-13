@@ -534,10 +534,13 @@ async function main() {
       usagePct: overlay?.usagePct ?? 0,
       rank: overlay?.rank ?? null,
       regulations: JSON.stringify([]),
-      // For now every imported Pokémon is treated as a Champions battler.
-      // When we add other games (e.g. Scarlet/Violet ranked), curate per-mon
-      // rosters here.
-      games: JSON.stringify(["pokemon-champions"]),
+      // Champions roster proxy: tag for "pokemon-champions" only if this
+      // Pokémon actually showed up in the Smogon Reg M-A dump (i.e. people
+      // play it competitively). Mons absent from the dump stay in the DB
+      // as catalog reference but are filtered out of list views.
+      games: JSON.stringify(
+        rawCountBySlug.has(p.identifier) ? ["pokemon-champions"] : [],
+      ),
       learnableMoves: JSON.stringify(learnableMoves),
       usageStats: usageStats ? JSON.stringify(usageStats) : "{}",
     };

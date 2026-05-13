@@ -63,7 +63,10 @@ export default async function PokemonListPage({
   const orderBy =
     sort === "bst" ? undefined : { [SORT_TO_FIELD[sort]]: dir as "asc" | "desc" };
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = {
+    // Champions roster only — see Pokemon.games tag in importer.
+    games: { contains: '"pokemon-champions"' },
+  };
   if (sp.q) {
     // Match against English `name` and the raw `nameI18n` JSON blob so users
     // can search by any locale (e.g. ガオガエン, 炽焰咆哮虎, Incineroar).

@@ -29,7 +29,9 @@ export default async function TeamBuilderPage({
   const loc = locale as Locale;
 
   const [pokemon, moves, abilities, items] = await Promise.all([
-    prisma.pokemon.findMany(),
+    prisma.pokemon.findMany({
+      where: { games: { contains: '"pokemon-champions"' } },
+    }),
     prisma.move.findMany(),
     prisma.ability.findMany(),
     prisma.item.findMany(),
