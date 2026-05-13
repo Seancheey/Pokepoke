@@ -30,6 +30,10 @@ model Pokemon {
   abilities   String   // JSON-encoded array of ability slugs (SQLite has no native array)
   hiddenAbility String?
   spriteUrl   String
+  // JSON array of game slugs this entity is supported in (e.g. ["pokemon-champions"]).
+  // Empty array means the entity is in the DB for reference but not surfaced in any
+  // active game's list views.
+  games       String   @default("[]")
   // JSON array of move slugs this Pokémon can learn (denormalized from pokemon_moves).
   learnableMoves String @default("[]")
   // JSON blob of competitive usage stats from Smogon chaos dump.
@@ -84,6 +88,9 @@ model Item {
   description String
   descI18n    String  @default("{}")
   descLongI18n String @default("{}")
+  // Same shape as Pokemon.games. Filters list views; non-Champions items stay
+  // in the DB for reference but aren't surfaced.
+  games       String  @default("[]")
   usagePct    Float   @default(0)
 }
 

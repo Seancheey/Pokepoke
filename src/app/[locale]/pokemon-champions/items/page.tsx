@@ -26,6 +26,10 @@ export default async function ItemsListPage({
 
   const items = await prisma.item.findMany({
     where: {
+      // Only show items tagged for the current game (Pokémon Champions).
+      // Pokéballs, healing items, evolution stones, repels, key items, TMs
+      // and so on were imported with `games: []` so they're excluded here.
+      games: { contains: '"pokemon-champions"' },
       ...(q
         ? {
             OR: [

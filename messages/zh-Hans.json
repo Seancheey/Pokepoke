@@ -1,6 +1,6 @@
 {
   "Nav": {
-    "brand": "pokeDD",
+    "brand": "口袋弟弟",
     "section": "冠军赛",
     "pokemon": "宝可梦",
     "moves": "招式",
@@ -307,10 +307,10 @@
     "fairy": "妖精"
   },
   "Footer": {
-    "tagline": "pokeDD · 宝可梦冠军赛伴侣 · 仅种子数据 — 使用率仅供参考。"
+    "tagline": "口袋弟弟 · 宝可梦冠军赛伴侣 · 仅种子数据 — 使用率仅供参考。"
   },
   "Meta": {
-    "title": "pokeDD — 宝可梦冠军赛",
+    "title": "口袋弟弟 — 宝可梦冠军赛",
     "description": "构筑、分享并测试宝可梦冠军赛队伍。无需账号。"
   }
 }

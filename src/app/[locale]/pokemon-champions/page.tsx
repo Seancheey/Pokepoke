@@ -52,12 +52,6 @@ export default async function HubPage({
           >
             {t("ctaDamageCalc")}
           </Link>
-          <Link
-            href="/pokemon-champions/teams"
-            className="rounded-full bg-white/20 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur hover:bg-white/30"
-          >
-            {t("ctaTeams")}
-          </Link>
         </div>
       </section>
 

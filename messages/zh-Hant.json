@@ -1,6 +1,6 @@
 {
   "Nav": {
-    "brand": "pokeDD",
+    "brand": "口袋弟弟",
     "section": "冠軍賽",
     "pokemon": "寶可夢",
     "moves": "招式",
@@ -307,10 +307,10 @@
     "fairy": "妖精"
   },
   "Footer": {
-    "tagline": "pokeDD · 寶可夢冠軍賽伴侶 · 僅種子資料 — 使用率僅供參考。"
+    "tagline": "口袋弟弟 · 寶可夢冠軍賽伴侶 · 僅種子資料 — 使用率僅供參考。"
   },
   "Meta": {
-    "title": "pokeDD — 寶可夢冠軍賽",
+    "title": "口袋弟弟 — 寶可夢冠軍賽",
     "description": "構築、分享並測試寶可夢冠軍賽隊伍。無需帳號。"
   }
 }

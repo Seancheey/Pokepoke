@@ -530,6 +530,10 @@ async function main() {
       usagePct: overlay?.usagePct ?? 0,
       rank: overlay?.rank ?? null,
       regulations: JSON.stringify([]),
+      // For now every imported Pokémon is treated as a Champions battler.
+      // When we add other games (e.g. Scarlet/Violet ranked), curate per-mon
+      // rosters here.
+      games: JSON.stringify(["pokemon-champions"]),
       learnableMoves: JSON.stringify(learnableMoves),
       usageStats: usageStats ? JSON.stringify(usageStats) : "{}",
     };
@@ -701,11 +705,33 @@ async function main() {
   // We don't have a categories table here; bucket items into our enum heuristically.
   function categoryFor(slug: string, categoryId: number): string {
     if (slug.endsWith("-berry") || slug.endsWith("berry")) return "berry";
-    if (slug.endsWith("ite") && categoryId === 53) return "mega-stone"; // category 53 = mega stones
+    if (slug.endsWith("ite") && categoryId === 44) return "mega-stone";
     if (slug.startsWith("choice-")) return "choice";
-    if (categoryId === 53) return "mega-stone";
-    if (categoryId === 17) return "type-boost"; // type-enhancers
+    if (categoryId === 44) return "mega-stone";
+    if (categoryId === 17 || categoryId === 19) return "type-boost";
     return "held"; // catch-all
+  }
+
+  // Categories that survive in Pokémon Champions (battle-relevant only).
+  // Anything outside this set + non-berry items gets games=[] and is hidden
+  // from the items list view.
+  const CHAMPIONS_CATEGORIES = new Set([
+    7,  // Type protection
+    12, // Held items
+    13, // Choice
+    15, // Bad held items (Flame Orb, Toxic Orb)
+    17, // Plates
+    19, // Type enhancement (Charcoal, Mystic Water, Dragon Fang, etc.)
+    36, // Scarves
+    44, // Mega Stones
+    45, // Memories (Silvally)
+    46, // Z-Crystals (deprecated in Champions but still recognizably battle items)
+    50, // Nature mints
+  ]);
+  function gamesFor(slug: string, categoryId: number): string[] {
+    if (CHAMPIONS_CATEGORIES.has(categoryId)) return ["pokemon-champions"];
+    if (slug.endsWith("-berry")) return ["pokemon-champions"]; // all berries can be held
+    return []; // Pokéballs, healing, evo stones, key items, mail, TMs, repels, etc.
   }
 
   const itemRowsToInsert = itemMeta.map((it) => {
@@ -728,14 +754,16 @@ async function main() {
       "zh-Hans": flavor?.["zh-Hans"] ?? "",
       "zh-Hant": flavor?.["zh-Hant"] ?? "",
     };
+    const cid = num(it.category_id);
     return {
       slug: it.identifier,
       name: enName,
       nameI18n: i18nJson(namesMap),
-      category: categoryFor(it.identifier, num(it.category_id)),
+      category: categoryFor(it.identifier, cid),
       description: shortDescEn,
       descI18n: i18nJson(shortI18n),
       descLongI18n: i18nJson(longI18n),
+      games: JSON.stringify(gamesFor(it.identifier, cid)),
       usagePct: 0,
     };
   });

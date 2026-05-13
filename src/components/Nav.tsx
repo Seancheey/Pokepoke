@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { LocaleSwitcher } from "./LocaleSwitcher";
+import { BrandMark } from "./BrandMark";
 
 export async function Nav() {
   const t = await getTranslations("Nav");
@@ -10,7 +11,6 @@ export async function Nav() {
     { href: "/pokemon-champions/abilities", label: t("abilities") },
     { href: "/pokemon-champions/items", label: t("items") },
     { href: "/pokemon-champions/team-builder", label: t("teamBuilder") },
-    { href: "/pokemon-champions/teams", label: t("teams") },
     { href: "/pokemon-champions/damage-calc", label: t("damageCalc") },
   ];
 
@@ -18,9 +18,7 @@ export async function Nav() {
     <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/85 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/85">
       <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-3">
         <Link href="/pokemon-champions" className="flex items-center gap-2">
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-amber-500 text-white text-xs font-black">
-            P
-          </span>
+          <BrandMark className="h-7 w-7" />
           <span className="text-base font-bold tracking-tight">
             {t("brand")}
             <span className="ml-1 rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
