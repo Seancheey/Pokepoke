@@ -143,7 +143,11 @@ function i18nJson(m: Record<Locale, string> | undefined): string {
 
 // ─── Smogon usage stats overlay ──────────────────────────────────────────────
 
-const SMOGON_FILE = "smogon-vgc2026regi-1760.json";
+// Pokémon Champions VGC Regulation M-A — the actual competitive format for
+// Pokémon Champions (NOT the same as gen9vgc2026regi which is Scarlet/Violet's
+// VGC). Format ID on Smogon: gen9championsvgc2026regma. Pull from the 1760+
+// elo cutoff so the stats represent high-skill play rather than ladder noise.
+const SMOGON_FILE = "smogon-championsvgc2026regma-1760.json";
 
 type SmogonEntry = {
   "Raw count": number;
