@@ -71,7 +71,10 @@
     "baseStats": "種族值",
     "abilities": "特性",
     "hiddenSuffix": "(隱藏特性)",
-    "phase1Note": "招式池、配置範例、搭檔與屬性相剋表將在階段 1 上線。"
+    "phase1Note": "招式池、配置範例、搭檔與屬性相剋表將在階段 1 上線。",
+    "learnset": "可學會的招式",
+    "learnsetCount": "{count, plural, other {# 個}}",
+    "learnsetSearch": "篩選招式…"
   },
   "Moves": {
     "title": "招式",

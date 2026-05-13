@@ -71,7 +71,10 @@
     "baseStats": "種族値",
     "abilities": "とくせい",
     "hiddenSuffix": "(隠れ特性)",
-    "phase1Note": "わざプール、構築例、相棒、相性表はPhase 1で実装予定。"
+    "phase1Note": "わざプール、構築例、相棒、相性表はPhase 1で実装予定。",
+    "learnset": "覚えられるわざ",
+    "learnsetCount": "{count, plural, other {# 件}}",
+    "learnsetSearch": "わざを絞り込む…"
   },
   "Moves": {
     "title": "わざ",

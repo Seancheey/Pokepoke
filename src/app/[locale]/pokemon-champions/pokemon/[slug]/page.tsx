@@ -6,7 +6,12 @@ import { prisma } from "@/lib/db";
 import { TypeChip } from "@/components/TypeChip";
 import type { PokemonType } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
-import { localizedPokemonName } from "@/lib/i18n-pokemon";
+import {
+  localizedPokemonName,
+  localizedAbilityName,
+  localizedMoveName,
+} from "@/lib/i18n-pokemon";
+import { LearnsetTable, type LearnsetRow } from "./LearnsetTable";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +22,7 @@ export default async function PokemonDetailPage({
 }) {
   const { slug, locale } = await params;
   setRequestLocale(locale);
+  const loc = locale as Locale;
   const t = await getTranslations("Detail");
 
   const p = await prisma.pokemon.findUnique({ where: { slug } });
@@ -29,8 +35,47 @@ export default async function PokemonDetailPage({
   ];
   const max = Math.max(...stats.map((s) => s.v), 200);
   const abilityList: string[] = JSON.parse(p.abilities);
-  const displayName = localizedPokemonName(p, locale as Locale);
+  const learnableMoveSlugs: string[] = JSON.parse(p.learnableMoves);
+  const displayName = localizedPokemonName(p, loc);
   const cols = await getTranslations("List.columns");
+
+  // Look up DB rows for the abilities + moves this Pokémon has, so we can show
+  // localized names and link to detail pages.
+  const allAbilitySlugs = [...new Set([...abilityList, ...(p.hiddenAbility ? [p.hiddenAbility] : [])])];
+  const [abilityRows, moveRows] = await Promise.all([
+    allAbilitySlugs.length > 0
+      ? prisma.ability.findMany({ where: { slug: { in: allAbilitySlugs } } })
+      : Promise.resolve([]),
+    learnableMoveSlugs.length > 0
+      ? prisma.move.findMany({ where: { slug: { in: learnableMoveSlugs } } })
+      : Promise.resolve([]),
+  ]);
+
+  const abilityNameBySlug = new Map(
+    abilityRows.map((a) => [a.slug, localizedAbilityName(a, loc)]),
+  );
+
+  // Per-mon move usage % (Smogon overlay)
+  let pctByMove = new Map<string, number>();
+  try {
+    const usage = JSON.parse(p.usageStats);
+    if (usage?.topMoves) {
+      pctByMove = new Map<string, number>(
+        (usage.topMoves as Array<{ slug: string; pct: number }>).map((m) => [m.slug, m.pct]),
+      );
+    }
+  } catch { /* ignore */ }
+
+  const learnsetRows: LearnsetRow[] = moveRows.map((m) => ({
+    slug: m.slug,
+    name: localizedMoveName(m, loc),
+    type: m.type,
+    category: m.category,
+    power: m.power,
+    accuracy: m.accuracy,
+    pp: m.pp,
+    usagePct: pctByMove.get(m.slug),
+  }));
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
@@ -48,6 +93,7 @@ export default async function PokemonDetailPage({
           width={160}
           height={160}
           priority
+          unoptimized
           className="h-32 w-32 shrink-0 object-contain"
         />
         <div className="flex-1">
@@ -105,22 +151,30 @@ export default async function PokemonDetailPage({
         <h2 className="text-lg font-bold">{t("abilities")}</h2>
         <ul className="mt-3 flex flex-wrap gap-2">
           {abilityList.map((a) => (
-            <li
-              key={a}
-              className="rounded-md bg-zinc-100 px-3 py-1 text-sm font-medium dark:bg-zinc-800"
-            >
-              {a.replace(/-/g, " ")}
+            <li key={a}>
+              <Link
+                href={`/pokemon-champions/abilities/${a}`}
+                className="rounded-md bg-zinc-100 px-3 py-1 text-sm font-medium hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+              >
+                {abilityNameBySlug.get(a) ?? a.replace(/-/g, " ")}
+              </Link>
             </li>
           ))}
           {p.hiddenAbility ? (
-            <li className="rounded-md border border-dashed border-zinc-400 px-3 py-1 text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              {p.hiddenAbility.replace(/-/g, " ")}{" "}
-              <span className="text-xs">{t("hiddenSuffix")}</span>
+            <li>
+              <Link
+                href={`/pokemon-champions/abilities/${p.hiddenAbility}`}
+                className="rounded-md border border-dashed border-zinc-400 px-3 py-1 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              >
+                {abilityNameBySlug.get(p.hiddenAbility) ?? p.hiddenAbility.replace(/-/g, " ")}{" "}
+                <span className="text-xs">{t("hiddenSuffix")}</span>
+              </Link>
             </li>
           ) : null}
         </ul>
-        <p className="mt-3 text-xs text-zinc-500">{t("phase1Note")}</p>
       </section>
+
+      <LearnsetTable moves={learnsetRows} />
     </main>
   );
 }

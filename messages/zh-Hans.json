@@ -71,7 +71,10 @@
     "baseStats": "种族值",
     "abilities": "特性",
     "hiddenSuffix": "(隐藏特性)",
-    "phase1Note": "招式池、配置范例、搭档与属性相性表将在阶段 1 上线。"
+    "phase1Note": "招式池、配置范例、搭档与属性相性表将在阶段 1 上线。",
+    "learnset": "能学会的招式",
+    "learnsetCount": "{count, plural, other {# 个}}",
+    "learnsetSearch": "筛选招式…"
   },
   "Moves": {
     "title": "招式",

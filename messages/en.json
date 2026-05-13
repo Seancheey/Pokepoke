@@ -71,7 +71,10 @@
     "baseStats": "Base stats",
     "abilities": "Abilities",
     "hiddenSuffix": "(hidden)",
-    "phase1Note": "Movepool, top sets, teammates, and matchup grid land in Phase 1."
+    "phase1Note": "Movepool, top sets, teammates, and matchup grid land in Phase 1.",
+    "learnset": "Learnable moves",
+    "learnsetCount": "{count, plural, =1 {1 move} other {# moves}}",
+    "learnsetSearch": "Filter moves…"
   },
   "Moves": {
     "title": "Moves",
