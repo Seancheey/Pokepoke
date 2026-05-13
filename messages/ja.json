@@ -70,6 +70,13 @@
     "baseStats": "種族値",
     "abilities": "とくせい",
     "hiddenSuffix": "(隠れ特性)",
+    "matchups": "タイプ相性",
+    "weak4x": "4倍弱点",
+    "weak2x": "弱点 (×2)",
+    "resist05": "半減 (×0.5)",
+    "resist025": "1/4軽減 (×0.25)",
+    "immune": "無効 (×0)",
+    "matchupsNeutral": "その他のタイプは等倍。",
     "learnset": "覚えられるわざ",
     "learnsetCount": "{count, plural, other {# 件}}",
     "learnsetSearch": "わざを絞り込む…"

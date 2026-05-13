@@ -70,6 +70,13 @@
     "baseStats": "種族值",
     "abilities": "特性",
     "hiddenSuffix": "(隱藏特性)",
+    "matchups": "屬性相剋",
+    "weak4x": "4倍弱點",
+    "weak2x": "弱點 (×2)",
+    "resist05": "半減 (×0.5)",
+    "resist025": "1/4 減傷 (×0.25)",
+    "immune": "免疫 (×0)",
+    "matchupsNeutral": "其他屬性皆為常規倍率。",
     "learnset": "可學會的招式",
     "learnsetCount": "{count, plural, other {# 個}}",
     "learnsetSearch": "篩選招式…"

@@ -4,7 +4,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/db";
 import { TypeChip } from "@/components/TypeChip";
-import type { PokemonType } from "@/lib/types";
+import { POKEMON_TYPES, type PokemonType } from "@/lib/types";
+import { effectivenessAgainst } from "@/lib/type-chart";
 import type { Locale } from "@/i18n/routing";
 import {
   localizedPokemonName,
@@ -174,7 +175,80 @@ export default async function PokemonDetailPage({
         </ul>
       </section>
 
+      <DefensiveMatchups types={[p.type1, p.type2].filter(Boolean) as PokemonType[]} t={t} />
+
       <LearnsetTable moves={learnsetRows} />
     </main>
+  );
+}
+
+// ─── Defensive matchups ──────────────────────────────────────────────────────
+
+type DetailT = Awaited<ReturnType<typeof getTranslations<"Detail">>>;
+
+function DefensiveMatchups({
+  types,
+  t,
+}: {
+  types: PokemonType[];
+  t: DetailT;
+}) {
+  // Bucket each of the 18 incoming attack types by multiplier
+  const buckets: Record<string, PokemonType[]> = {
+    "4": [], "2": [], "0.5": [], "0.25": [], "0": [],
+  };
+  for (const atk of POKEMON_TYPES) {
+    const m = effectivenessAgainst(atk, types);
+    if (m === 4)     buckets["4"].push(atk);
+    else if (m === 2)    buckets["2"].push(atk);
+    else if (m === 0.5)  buckets["0.5"].push(atk);
+    else if (m === 0.25) buckets["0.25"].push(atk);
+    else if (m === 0)    buckets["0"].push(atk);
+    // 1× neutral isn't shown to keep the section focused
+  }
+
+  const rows: Array<{
+    key: keyof typeof buckets;
+    labelKey: "weak4x" | "weak2x" | "resist05" | "resist025" | "immune";
+    tone: string;
+  }> = [
+    { key: "4",    labelKey: "weak4x",   tone: "border-red-500 bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300" },
+    { key: "2",    labelKey: "weak2x",   tone: "border-red-300 bg-red-50/60 text-red-700 dark:bg-red-950/20 dark:text-red-300" },
+    { key: "0.5",  labelKey: "resist05", tone: "border-emerald-300 bg-emerald-50/60 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300" },
+    { key: "0.25", labelKey: "resist025", tone: "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300" },
+    { key: "0",    labelKey: "immune",   tone: "border-sky-400 bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300" },
+  ];
+
+  const anyNonNeutral = rows.some((r) => buckets[r.key].length > 0);
+
+  return (
+    <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <h2 className="text-lg font-bold">{t("matchups")}</h2>
+      {anyNonNeutral ? (
+        <div className="mt-4 space-y-2">
+          {rows.map((row) => {
+            const list = buckets[row.key];
+            if (list.length === 0) return null;
+            return (
+              <div
+                key={row.key}
+                className={`flex flex-wrap items-center gap-2 rounded-lg border-l-4 px-3 py-2 ${row.tone}`}
+              >
+                <span className="text-xs font-semibold uppercase tracking-wider">
+                  {t(row.labelKey)}
+                </span>
+                <span className="flex flex-wrap gap-1">
+                  {list.map((tp) => (
+                    <TypeChip key={tp} type={tp} size="sm" />
+                  ))}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm text-zinc-500">{t("matchupsNeutral")}</p>
+      )}
+    </section>
   );
 }

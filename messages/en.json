@@ -70,6 +70,13 @@
     "baseStats": "Base stats",
     "abilities": "Abilities",
     "hiddenSuffix": "(hidden)",
+    "matchups": "Defensive matchups",
+    "weak4x": "Takes ×4 from",
+    "weak2x": "Weak to (×2)",
+    "resist05": "Resists (×0.5)",
+    "resist025": "Resists (×0.25)",
+    "immune": "Immune to (×0)",
+    "matchupsNeutral": "Neutral against everything else.",
     "learnset": "Learnable moves",
     "learnsetCount": "{count, plural, =1 {1 move} other {# moves}}",
     "learnsetSearch": "Filter moves…"
