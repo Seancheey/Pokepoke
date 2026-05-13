@@ -1,0 +1,6 @@
+.env
+.env.*
+!.env.example
+data/pokeapi/
+prisma/dev.db
+prisma/dev.db-journal
