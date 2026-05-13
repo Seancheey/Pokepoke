@@ -26,7 +26,15 @@ export default async function ItemsListPage({
 
   const items = await prisma.item.findMany({
     where: {
-      ...(q ? { name: { contains: q } } : {}),
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q } },
+              { nameI18n: { contains: q } },
+              { slug: { contains: q } },
+            ],
+          }
+        : {}),
       ...(cat ? { category: cat } : {}),
     },
     orderBy: { usagePct: "desc" },

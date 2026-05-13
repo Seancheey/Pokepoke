@@ -64,7 +64,15 @@ export default async function PokemonListPage({
     sort === "bst" ? undefined : { [SORT_TO_FIELD[sort]]: dir as "asc" | "desc" };
 
   const where: Record<string, unknown> = {};
-  if (sp.q) where.name = { contains: sp.q };
+  if (sp.q) {
+    // Match against English `name` and the raw `nameI18n` JSON blob so users
+    // can search by any locale (e.g. ガオガエン, 炽焰咆哮虎, Incineroar).
+    where.OR = [
+      { name: { contains: sp.q } },
+      { nameI18n: { contains: sp.q } },
+      { slug: { contains: sp.q } },
+    ];
+  }
   if (selectedTypes.length > 0) {
     // AND across selected types: the Pokémon must carry every chosen type
     // (in either slot). Picking >2 types yields an empty result by construction,
