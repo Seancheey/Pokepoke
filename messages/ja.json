@@ -110,7 +110,8 @@
       "contact": "接触",
       "yes": "あり",
       "no": "なし",
-      "target": "対象"
+      "target": "対象",
+      "learners": "このわざを覚えるポケモン"
     }
   },
   "Abilities": {

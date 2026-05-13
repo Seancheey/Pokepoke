@@ -110,7 +110,8 @@
       "contact": "接觸",
       "yes": "是",
       "no": "否",
-      "target": "目標"
+      "target": "目標",
+      "learners": "可學會此招式的寶可夢"
     }
   },
   "Abilities": {

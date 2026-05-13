@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
@@ -5,7 +6,11 @@ import { prisma } from "@/lib/db";
 import { TypeChip } from "@/components/TypeChip";
 import type { PokemonType } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
-import { localizedMoveName, localizedMoveEffect } from "@/lib/i18n-pokemon";
+import {
+  localizedMoveName,
+  localizedMoveEffect,
+  localizedPokemonName,
+} from "@/lib/i18n-pokemon";
 import { CategoryBadge } from "@/components/CategoryBadge";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +28,17 @@ export default async function MoveDetailPage({
 
   const m = await prisma.move.findUnique({ where: { slug } });
   if (!m) notFound();
+
+  // Pokémon that can learn this move. The slug is wrapped in JSON-quotes
+  // in the `learnableMoves` array, so the substring match `"foo"` is safe —
+  // it can't false-match a prefix or suffix of another slug.
+  const learners = await prisma.pokemon.findMany({
+    where: { learnableMoves: { contains: `"${slug}"` } },
+    orderBy: [
+      { rank: { sort: "asc", nulls: "last" } },
+      { dexNo: "asc" },
+    ],
+  });
 
   const displayName = localizedMoveName(m, locale as Locale);
   const effect = localizedMoveEffect(m, locale as Locale);
@@ -65,6 +81,44 @@ export default async function MoveDetailPage({
             </div>
           ))}
         </dl>
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <h2 className="text-lg font-bold">
+          {td("learners")}{" "}
+          <span className="text-sm font-normal text-zinc-500">({learners.length})</span>
+        </h2>
+        {learners.length === 0 ? (
+          <p className="mt-3 text-sm text-zinc-500">—</p>
+        ) : (
+          <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            {learners.map((p) => (
+              <li key={p.id}>
+                <Link
+                  href={`/pokemon-champions/pokemon/${p.slug}`}
+                  className="group flex items-center gap-2 rounded-md border border-zinc-200 p-2 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:border-zinc-700 dark:hover:bg-zinc-800"
+                >
+                  <Image
+                    src={p.spriteUrl}
+                    alt={p.name}
+                    width={36}
+                    height={36}
+                    unoptimized
+                    className="h-9 w-9 shrink-0 object-contain"
+                  />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                    {localizedPokemonName(p, locale as Locale)}
+                  </span>
+                  {p.rank ? (
+                    <span className="shrink-0 font-mono text-[10px] text-zinc-400">
+                      #{p.rank}
+                    </span>
+                  ) : null}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </main>
   );
