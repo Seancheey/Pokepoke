@@ -22,6 +22,7 @@ import { PrismaClient } from "@prisma/client";
 import { parse } from "csv-parse/sync";
 import fs from "node:fs";
 import path from "node:path";
+import { ABILITY_OVERRIDES } from "./ability-overrides";
 
 const DATA = path.join(__dirname, "../data/pokeapi");
 const prisma = new PrismaClient();
@@ -638,23 +639,33 @@ async function main() {
       const enName = namesMap?.en ?? a.identifier;
       const shortDescEn = prose?.short || flavor?.en || "";
       const longDescEn = prose?.long || prose?.short || flavor?.en || "";
+
+      // Apply hand-curated zh-Hans / zh-Hant overlay where PokeAPI ships nothing.
+      // Use `||` (not `??`) because buildNameI18n / buildFlavorI18n initialise
+      // missing locales with empty strings, not undefined.
+      const override = ABILITY_OVERRIDES[a.identifier];
+      const mergedName: Record<Locale, string> = {
+        en: namesMap?.en || enName,
+        ja: namesMap?.ja || "",
+        "zh-Hans": namesMap?.["zh-Hans"] || override?.name?.["zh-Hans"] || "",
+        "zh-Hant": namesMap?.["zh-Hant"] || override?.name?.["zh-Hant"] || "",
+      };
       const longI18n: Record<Locale, string> = {
         en: longDescEn,
-        ja: flavor?.ja ?? "",
-        "zh-Hans": flavor?.["zh-Hans"] ?? "",
-        "zh-Hant": flavor?.["zh-Hant"] ?? "",
+        ja: flavor?.ja || "",
+        "zh-Hans": flavor?.["zh-Hans"] || override?.short?.["zh-Hans"] || "",
+        "zh-Hant": flavor?.["zh-Hant"] || override?.short?.["zh-Hant"] || "",
       };
-      // shortDescI18n: prefer prose short for EN, flavor for others
       const shortI18n: Record<Locale, string> = {
         en: shortDescEn,
-        ja: flavor?.ja ?? "",
-        "zh-Hans": flavor?.["zh-Hans"] ?? "",
-        "zh-Hant": flavor?.["zh-Hant"] ?? "",
+        ja: flavor?.ja || "",
+        "zh-Hans": flavor?.["zh-Hans"] || override?.short?.["zh-Hans"] || "",
+        "zh-Hant": flavor?.["zh-Hant"] || override?.short?.["zh-Hant"] || "",
       };
       return {
         slug: a.identifier,
         name: enName,
-        nameI18n: i18nJson(namesMap),
+        nameI18n: i18nJson(mergedName),
         shortDesc: shortDescEn,
         shortDescI18n: i18nJson(shortI18n),
         longDesc: longDescEn,
