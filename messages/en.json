@@ -1,6 +1,6 @@
 {
   "Nav": {
-    "brand": "PokePoke",
+    "brand": "pokeDD",
     "section": "Champions",
     "pokemon": "Pokémon",
     "moves": "Moves",
@@ -299,10 +299,10 @@
     "fairy": "Fairy"
   },
   "Footer": {
-    "tagline": "PokePoke · companion for Pokémon Champions · seed data only — usage stats are illustrative."
+    "tagline": "pokeDD · companion for Pokémon Champions · seed data only — usage stats are illustrative."
   },
   "Meta": {
-    "title": "PokePoke — Pokémon Champions",
+    "title": "pokeDD — Pokémon Champions",
     "description": "Build, share, and stress-test Pokémon Champions teams. No account required."
   }
 }

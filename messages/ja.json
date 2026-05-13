@@ -1,6 +1,6 @@
 {
   "Nav": {
-    "brand": "PokePoke",
+    "brand": "pokeDD",
     "section": "チャンピオンズ",
     "pokemon": "ポケモン",
     "moves": "わざ",
@@ -299,10 +299,10 @@
     "fairy": "フェアリー"
   },
   "Footer": {
-    "tagline": "PokePoke · ポケモンチャンピオンズ コンパニオン · シードデータのみ — 使用率は参考値です。"
+    "tagline": "pokeDD · ポケモンチャンピオンズ コンパニオン · シードデータのみ — 使用率は参考値です。"
   },
   "Meta": {
-    "title": "PokePoke — ポケモンチャンピオンズ",
+    "title": "pokeDD — ポケモンチャンピオンズ",
     "description": "ポケモンチャンピオンズのチームを構築・共有・検証。アカウント不要。"
   }
 }

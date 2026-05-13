@@ -1,6 +1,6 @@
 {
   "Nav": {
-    "brand": "PokePoke",
+    "brand": "pokeDD",
     "section": "冠軍賽",
     "pokemon": "寶可夢",
     "moves": "招式",
@@ -299,10 +299,10 @@
     "fairy": "妖精"
   },
   "Footer": {
-    "tagline": "PokePoke · 寶可夢冠軍賽伴侶 · 僅種子資料 — 使用率僅供參考。"
+    "tagline": "pokeDD · 寶可夢冠軍賽伴侶 · 僅種子資料 — 使用率僅供參考。"
   },
   "Meta": {
-    "title": "PokePoke — 寶可夢冠軍賽",
+    "title": "pokeDD — 寶可夢冠軍賽",
     "description": "構築、分享並測試寶可夢冠軍賽隊伍。無需帳號。"
   }
 }

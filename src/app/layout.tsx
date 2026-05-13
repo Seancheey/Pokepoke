@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PokePoke",
+  title: "pokeDD",
   description: "Pokémon Champions companion.",
 };
 
