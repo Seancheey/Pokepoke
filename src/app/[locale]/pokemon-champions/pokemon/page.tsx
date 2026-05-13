@@ -66,7 +66,12 @@ export default async function PokemonListPage({
   const where: Record<string, unknown> = {};
   if (sp.q) where.name = { contains: sp.q };
   if (selectedTypes.length > 0) {
-    where.OR = selectedTypes.flatMap((tp) => [{ type1: tp }, { type2: tp }]);
+    // AND across selected types: the Pokémon must carry every chosen type
+    // (in either slot). Picking >2 types yields an empty result by construction,
+    // since a Pokémon has at most two types.
+    where.AND = selectedTypes.map((tp) => ({
+      OR: [{ type1: tp }, { type2: tp }],
+    }));
   }
 
   let pokemon = await prisma.pokemon.findMany({ where, orderBy });
