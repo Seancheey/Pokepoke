@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PokePoke">
+  <defs>
+    <linearGradient id="brand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="55%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#fbbf24"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx="35%" cy="30%" r="55%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- Brand disc -->
+  <circle cx="32" cy="32" r="32" fill="url(#brand)"/>
+  <!-- Subtle top-left highlight to give it depth at small sizes -->
+  <circle cx="32" cy="32" r="32" fill="url(#sheen)"/>
+  <!-- Bold "P" — drawn as a path so it renders identically on every platform.
+       Stem + loop. Designed at 64×64 viewBox so 16×16 / 32×32 stay crisp. -->
+  <path
+    fill="#ffffff"
+    d="M22 12
+       h16
+       a13 13 0 0 1 0 26
+       h-9
+       v14
+       h-7
+       z
+       M29 19
+       v12
+       h9
+       a6 6 0 0 0 0 -12
+       z"
+  />
+</svg>
