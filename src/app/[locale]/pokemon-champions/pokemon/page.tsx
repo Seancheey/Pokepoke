@@ -68,9 +68,9 @@ export default async function PokemonListPage({
     // Match against English `name` and the raw `nameI18n` JSON blob so users
     // can search by any locale (e.g. ガオガエン, 炽焰咆哮虎, Incineroar).
     where.OR = [
-      { name: { contains: sp.q } },
-      { nameI18n: { contains: sp.q } },
-      { slug: { contains: sp.q } },
+      { name: { contains: sp.q, mode: "insensitive" } },
+      { nameI18n: { contains: sp.q, mode: "insensitive" } },
+      { slug: { contains: sp.q, mode: "insensitive" } },
     ];
   }
   if (selectedTypes.length > 0) {

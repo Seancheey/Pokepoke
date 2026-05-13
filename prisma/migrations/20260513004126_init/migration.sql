@@ -1,9 +1,10 @@
 -- CreateTable
 CREATE TABLE "Pokemon" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "slug" TEXT NOT NULL,
     "dexNo" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
+    "nameI18n" TEXT NOT NULL DEFAULT '{}',
     "type1" TEXT NOT NULL,
     "type2" TEXT,
     "hp" INTEGER NOT NULL,
@@ -15,18 +16,23 @@ CREATE TABLE "Pokemon" (
     "abilities" TEXT NOT NULL,
     "hiddenAbility" TEXT,
     "spriteUrl" TEXT NOT NULL,
-    "usagePct" REAL NOT NULL DEFAULT 0,
+    "learnableMoves" TEXT NOT NULL DEFAULT '[]',
+    "usageStats" TEXT NOT NULL DEFAULT '{}',
+    "usagePct" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "rank" INTEGER,
     "regulations" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Pokemon_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Move" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "nameI18n" TEXT NOT NULL DEFAULT '{}',
     "type" TEXT NOT NULL,
     "category" TEXT NOT NULL,
     "power" INTEGER,
@@ -36,39 +42,52 @@ CREATE TABLE "Move" (
     "targetShape" TEXT NOT NULL,
     "makesContact" BOOLEAN NOT NULL DEFAULT false,
     "effectText" TEXT NOT NULL,
+    "effectI18n" TEXT NOT NULL DEFAULT '{}',
     "effectChance" INTEGER,
-    "usagePct" REAL NOT NULL DEFAULT 0
+    "usagePct" DOUBLE PRECISION NOT NULL DEFAULT 0,
+
+    CONSTRAINT "Move_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Ability" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "nameI18n" TEXT NOT NULL DEFAULT '{}',
     "shortDesc" TEXT NOT NULL,
+    "shortDescI18n" TEXT NOT NULL DEFAULT '{}',
     "longDesc" TEXT NOT NULL,
-    "usagePct" REAL NOT NULL DEFAULT 0
+    "usagePct" DOUBLE PRECISION NOT NULL DEFAULT 0,
+
+    CONSTRAINT "Ability_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Item" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "nameI18n" TEXT NOT NULL DEFAULT '{}',
     "category" TEXT NOT NULL,
     "description" TEXT NOT NULL,
-    "usagePct" REAL NOT NULL DEFAULT 0
+    "descI18n" TEXT NOT NULL DEFAULT '{}',
+    "usagePct" DOUBLE PRECISION NOT NULL DEFAULT 0,
+
+    CONSTRAINT "Item_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Regulation" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "maxVp" INTEGER NOT NULL,
     "allowTera" BOOLEAN NOT NULL DEFAULT false,
-    "validFrom" DATETIME NOT NULL,
-    "validTo" DATETIME
+    "validFrom" TIMESTAMP(3) NOT NULL,
+    "validTo" TIMESTAMP(3),
+
+    CONSTRAINT "Regulation_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex

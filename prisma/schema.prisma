@@ -1,13 +1,15 @@
-// PokePoke schema — dev uses SQLite; prod target is Postgres (swap provider + datasource url).
-// Most relation tables omitted in this phase; Phase 1 adds moves/abilities/items joins and usage snapshots.
+// pokeDD schema — Neon Postgres.
+// JSON-shaped columns stay as TEXT (not jsonb) because we use substring
+// `contains` searches against them for multi-lang name lookup.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Pokemon {

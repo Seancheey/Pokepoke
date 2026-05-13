@@ -29,9 +29,9 @@ export default async function ItemsListPage({
       ...(q
         ? {
             OR: [
-              { name: { contains: q } },
-              { nameI18n: { contains: q } },
-              { slug: { contains: q } },
+              { name: { contains: q, mode: "insensitive" } },
+              { nameI18n: { contains: q, mode: "insensitive" } },
+              { slug: { contains: q, mode: "insensitive" } },
             ],
           }
         : {}),
