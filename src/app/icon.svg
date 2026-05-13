@@ -1,34 +1,44 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PokePoke">
   <defs>
-    <linearGradient id="brand" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ef4444"/>
-      <stop offset="55%" stop-color="#f97316"/>
-      <stop offset="100%" stop-color="#fbbf24"/>
+    <!-- Brand-tinted red for the top half (red→orange leans into our gradient). -->
+    <linearGradient id="topRed" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#f97316"/>
     </linearGradient>
-    <radialGradient id="sheen" cx="35%" cy="30%" r="55%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+    <!-- Off-white for the bottom half so it doesn't disappear on light browser
+         chromes (white tabs etc.). -->
+    <linearGradient id="bottomCream" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#fafafa"/>
+      <stop offset="100%" stop-color="#e4e4e7"/>
+    </linearGradient>
+    <!-- Subtle highlight to give the ball volume at small sizes. -->
+    <radialGradient id="sheen" cx="32%" cy="28%" r="48%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.40"/>
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
+    <!-- Use a circle as the clip so the top/bottom rectangles render as half-discs. -->
+    <clipPath id="disc">
+      <circle cx="32" cy="32" r="30"/>
+    </clipPath>
   </defs>
-  <!-- Brand disc -->
-  <circle cx="32" cy="32" r="32" fill="url(#brand)"/>
-  <!-- Subtle top-left highlight to give it depth at small sizes -->
-  <circle cx="32" cy="32" r="32" fill="url(#sheen)"/>
-  <!-- Bold "P" — drawn as a path so it renders identically on every platform.
-       Stem + loop. Designed at 64×64 viewBox so 16×16 / 32×32 stay crisp. -->
-  <path
-    fill="#ffffff"
-    d="M22 12
-       h16
-       a13 13 0 0 1 0 26
-       h-9
-       v14
-       h-7
-       z
-       M29 19
-       v12
-       h9
-       a6 6 0 0 0 0 -12
-       z"
-  />
+
+  <!-- Top half (red) + bottom half (cream), masked to the disc. -->
+  <g clip-path="url(#disc)">
+    <rect x="0" y="0"  width="64" height="32" fill="url(#topRed)"/>
+    <rect x="0" y="32" width="64" height="32" fill="url(#bottomCream)"/>
+    <!-- Highlight pass — covers both halves so the sheen reads as a single ball. -->
+    <rect x="0" y="0" width="64" height="64" fill="url(#sheen)"/>
+  </g>
+
+  <!-- Dark equator band. Slightly thicker than visually expected because the
+       center button cuts through it; this keeps the band visible at 16×16. -->
+  <rect x="2" y="29" width="60" height="6" fill="#18181b"/>
+
+  <!-- Outer ring. -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#18181b" stroke-width="4"/>
+
+  <!-- Center button — outer dark, inner white. The two-ring construction is
+       what distinguishes a Poké-ball mark from a generic split-color circle. -->
+  <circle cx="32" cy="32" r="9"   fill="#18181b"/>
+  <circle cx="32" cy="32" r="5.5" fill="#ffffff"/>
 </svg>
