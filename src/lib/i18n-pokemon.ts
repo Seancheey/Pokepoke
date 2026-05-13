@@ -53,6 +53,13 @@ export function localizedAbilityShortDesc(
   return pickLocalized(a.shortDescI18n, a.shortDesc, locale);
 }
 
+export function localizedAbilityLongDesc(
+  a: { longDesc: string; longDescI18n: string },
+  locale: Locale,
+): string {
+  return pickLocalized(a.longDescI18n, a.longDesc, locale);
+}
+
 export function localizedItemName(
   i: { name: string; nameI18n: string },
   locale: Locale,
@@ -65,4 +72,20 @@ export function localizedItemDesc(
   locale: Locale,
 ): string {
   return pickLocalized(i.descI18n, i.description, locale);
+}
+
+export function localizedItemLongDesc(
+  i: { description: string; descI18n: string; descLongI18n: string },
+  locale: Locale,
+): string {
+  return pickLocalized(i.descLongI18n, "", locale)
+    || pickLocalized(i.descI18n, i.description, locale);
+}
+
+export function localizedMoveLongEffect(
+  m: { effectText: string; effectI18n: string; effectLongI18n: string },
+  locale: Locale,
+): string {
+  return pickLocalized(m.effectLongI18n, "", locale)
+    || pickLocalized(m.effectI18n, m.effectText, locale);
 }

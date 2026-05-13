@@ -96,10 +96,12 @@ function buildFlavorI18n<T extends Record<string, string>>(
   textField = "flavor_text",
 ): Map<number, Record<Locale, string>> {
   // Pick row with highest version_group_id per (entity, language).
+  // Note: flavor_text CSVs use `language_id` (no `local_` prefix), unlike the
+  // `*_names.csv` files which use `local_language_id`. Handle both.
   const best = new Map<string, { vg: number; text: string }>();
   for (const r of rows) {
     const eid = num(r[entityIdField]);
-    const lid = num(r.local_language_id);
+    const lid = num(r.language_id) || num(r.local_language_id);
     const vg = num(r.version_group_id);
     const text = (r[textField] ?? "").replace(/[\n\r­​]+/g, " ").trim();
     if (!eid || !lid || !text) continue;
@@ -545,9 +547,27 @@ async function main() {
   }>("moves.csv");
   const moveNamesRows = readCsv<Record<string, string>>("move_names.csv");
   const moveFlavorRows = readCsv<Record<string, string>>("move_flavor_text.csv");
+  const moveEffectProseRows = readCsv<Record<string, string>>("move_effect_prose.csv");
 
   const moveNames = buildNameI18n(moveNamesRows, "move_id", "name");
   const moveFlavor = buildFlavorI18n(moveFlavorRows, "move_id", "flavor_text");
+
+  // Map move_effect_id → long-form effect description.
+  // Many moves share the same effect_id (e.g. all generic damage moves share id=1),
+  // so this dedupes nicely.
+  const moveEffectById = new Map<number, { en: string }>();
+  for (const r of moveEffectProseRows) {
+    const eid = num(r.move_effect_id);
+    if (!eid) continue;
+    if (num(r.local_language_id) !== 9) continue; // English only
+    moveEffectById.set(eid, { en: r.effect || r.short_effect || "" });
+  }
+
+  function substituteChance(text: string, chance: string | undefined): string {
+    if (!text) return text;
+    if (chance) return text.replace(/\$effect_chance\b/g, chance);
+    return text;
+  }
 
   const moveRowsToInsert = moveMeta.map((m) => {
     const id = num(m.id);
@@ -555,6 +575,12 @@ async function main() {
     const flavor = moveFlavor.get(id);
     const enName = namesMap?.en ?? m.identifier;
     const effectEn = flavor?.en ?? "";
+    // Long-form prose lookup by effect_id; substitute the $effect_chance placeholder.
+    const proseEn = substituteChance(
+      moveEffectById.get(num(m.effect_id))?.en ?? "",
+      m.effect_chance,
+    );
+    const longI18n = { en: proseEn || effectEn, ja: flavor?.ja ?? "", "zh-Hans": flavor?.["zh-Hans"] ?? "", "zh-Hant": flavor?.["zh-Hant"] ?? "" };
     return {
       slug: m.identifier,
       name: enName,
@@ -569,6 +595,7 @@ async function main() {
       makesContact: false, // PokeAPI puts this under move_flag_map; skip for v1
       effectText: effectEn,
       effectI18n: i18nJson(flavor),
+      effectLongI18n: i18nJson(longI18n as Record<Locale, string>),
       effectChance: maybeNum(m.effect_chance),
       usagePct: 0,
     };
@@ -582,9 +609,24 @@ async function main() {
   const abilityMeta = readCsv<{ id: string; identifier: string; is_main_series: string }>("abilities.csv");
   const abilityNamesRows = readCsv<Record<string, string>>("ability_names.csv");
   const abilityFlavorRows = readCsv<Record<string, string>>("ability_flavor_text.csv");
+  const abilityProseRows = readCsv<Record<string, string>>("ability_prose.csv");
 
   const abilityNames = buildNameI18n(abilityNamesRows, "ability_id", "name");
   const abilityFlavor = buildFlavorI18n(abilityFlavorRows, "ability_id", "flavor_text");
+
+  // ability_prose.csv: per-locale short_effect + long-form effect (mostly EN+FR).
+  // We pull English here since it's the only locale with consistent prose coverage
+  // for the competitive ability list; non-English locales fall back to flavor.
+  const abilityProseById = new Map<number, { short: string; long: string }>();
+  for (const r of abilityProseRows) {
+    if (num(r.local_language_id) !== 9) continue;
+    const aid = num(r.ability_id);
+    if (!aid) continue;
+    abilityProseById.set(aid, {
+      short: r.short_effect ?? "",
+      long: r.effect ?? "",
+    });
+  }
 
   const abilityRowsToInsert = abilityMeta
     .filter((a) => a.is_main_series === "1")
@@ -592,15 +634,31 @@ async function main() {
       const id = num(a.id);
       const namesMap = abilityNames.get(id);
       const flavor = abilityFlavor.get(id);
+      const prose = abilityProseById.get(id);
       const enName = namesMap?.en ?? a.identifier;
-      const shortDescEn = flavor?.en ?? "";
+      const shortDescEn = prose?.short || flavor?.en || "";
+      const longDescEn = prose?.long || prose?.short || flavor?.en || "";
+      const longI18n: Record<Locale, string> = {
+        en: longDescEn,
+        ja: flavor?.ja ?? "",
+        "zh-Hans": flavor?.["zh-Hans"] ?? "",
+        "zh-Hant": flavor?.["zh-Hant"] ?? "",
+      };
+      // shortDescI18n: prefer prose short for EN, flavor for others
+      const shortI18n: Record<Locale, string> = {
+        en: shortDescEn,
+        ja: flavor?.ja ?? "",
+        "zh-Hans": flavor?.["zh-Hans"] ?? "",
+        "zh-Hant": flavor?.["zh-Hant"] ?? "",
+      };
       return {
         slug: a.identifier,
         name: enName,
         nameI18n: i18nJson(namesMap),
         shortDesc: shortDescEn,
-        shortDescI18n: i18nJson(flavor),
-        longDesc: shortDescEn, // PokeAPI's prose CSV split is messy; reuse flavor for now
+        shortDescI18n: i18nJson(shortI18n),
+        longDesc: longDescEn,
+        longDescI18n: i18nJson(longI18n),
         usagePct: 0,
       };
     });
@@ -613,9 +671,21 @@ async function main() {
   const itemMeta = readCsv<{ id: string; identifier: string; category_id: string }>("items.csv");
   const itemNamesRows = readCsv<Record<string, string>>("item_names.csv");
   const itemFlavorRows = readCsv<Record<string, string>>("item_flavor_text.csv");
+  const itemProseRows = readCsv<Record<string, string>>("item_prose.csv");
 
   const itemNames = buildNameI18n(itemNamesRows, "item_id", "name");
   const itemFlavor = buildFlavorI18n(itemFlavorRows, "item_id", "flavor_text");
+
+  const itemProseById = new Map<number, { short: string; long: string }>();
+  for (const r of itemProseRows) {
+    if (num(r.local_language_id) !== 9) continue;
+    const iid = num(r.item_id);
+    if (!iid) continue;
+    itemProseById.set(iid, {
+      short: r.short_effect ?? "",
+      long: r.effect ?? "",
+    });
+  }
 
   // We don't have a categories table here; bucket items into our enum heuristically.
   function categoryFor(slug: string, categoryId: number): string {
@@ -631,15 +701,30 @@ async function main() {
     const id = num(it.id);
     const namesMap = itemNames.get(id);
     const flavor = itemFlavor.get(id);
+    const prose = itemProseById.get(id);
     const enName = namesMap?.en ?? it.identifier;
-    const descEn = flavor?.en ?? "";
+    const shortDescEn = prose?.short || flavor?.en || "";
+    const longDescEn = prose?.long || prose?.short || flavor?.en || "";
+    const longI18n: Record<Locale, string> = {
+      en: longDescEn,
+      ja: flavor?.ja ?? "",
+      "zh-Hans": flavor?.["zh-Hans"] ?? "",
+      "zh-Hant": flavor?.["zh-Hant"] ?? "",
+    };
+    const shortI18n: Record<Locale, string> = {
+      en: shortDescEn,
+      ja: flavor?.ja ?? "",
+      "zh-Hans": flavor?.["zh-Hans"] ?? "",
+      "zh-Hant": flavor?.["zh-Hant"] ?? "",
+    };
     return {
       slug: it.identifier,
       name: enName,
       nameI18n: i18nJson(namesMap),
       category: categoryFor(it.identifier, num(it.category_id)),
-      description: descEn,
-      descI18n: i18nJson(flavor),
+      description: shortDescEn,
+      descI18n: i18nJson(shortI18n),
+      descLongI18n: i18nJson(longI18n),
       usagePct: 0,
     };
   });

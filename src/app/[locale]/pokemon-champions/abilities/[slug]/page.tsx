@@ -7,6 +7,7 @@ import type { Locale } from "@/i18n/routing";
 import {
   localizedAbilityName,
   localizedAbilityShortDesc,
+  localizedAbilityLongDesc,
   localizedPokemonName,
 } from "@/lib/i18n-pokemon";
 
@@ -58,8 +59,8 @@ export default async function AbilityDetailPage({
 
       <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <h2 className="text-lg font-bold">{td("description")}</h2>
-        <p className="mt-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-          {ability.longDesc}
+        <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+          {localizedAbilityLongDesc(ability, locale as Locale)}
         </p>
       </section>
 

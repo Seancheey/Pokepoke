@@ -58,6 +58,7 @@ model Move {
   makesContact Boolean @default(false)
   effectText  String
   effectI18n  String  @default("{}")
+  effectLongI18n String @default("{}")
   effectChance Int?
   usagePct    Float   @default(0)
 }
@@ -70,6 +71,7 @@ model Ability {
   shortDesc String
   shortDescI18n String @default("{}")
   longDesc  String
+  longDescI18n  String @default("{}")
   usagePct  Float   @default(0)
 }
 
@@ -81,6 +83,7 @@ model Item {
   category    String  // held | mega-stone | berry | type-boost | choice | misc
   description String
   descI18n    String  @default("{}")
+  descLongI18n String @default("{}")
   usagePct    Float   @default(0)
 }
 
