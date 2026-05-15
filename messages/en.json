@@ -177,7 +177,7 @@
     "statusFreeze": "Frozen",
     "hpPctLabel": "HP %",
     "stageLabel": "Stat stages",
-    "vpLabel": "VP",
+    "evLabel": "EV",
     "field": "Field conditions",
     "weather": "Weather",
     "weatherNone": "—",
@@ -228,13 +228,14 @@
     "abilityLabel": "Ability",
     "itemLabel": "Item",
     "movesLabel": "Moves",
-    "vpLabel": "Victory Points (VP)",
+    "evLabel": "Effort Values (EV)",
+    "evHint": "Max 32 per stat, 66 total.",
     "spreadPresetLabel": "Spread preset",
     "spreadPresetPlaceholder": "Pick a spread…",
     "customSpread": "Custom",
-    "vpRemaining": "{remaining} VP remaining",
-    "vpOver": "Over by {over} VP",
-    "vpStat": {
+    "evRemaining": "{remaining} EV remaining",
+    "evOver": "Over by {over} EV",
+    "evStat": {
       "hp": "HP", "atk": "Atk", "def": "Def", "spa": "SpA", "spd": "SpD", "spe": "Spe"
     },
     "share": "Share",

@@ -16,7 +16,7 @@ export type ShareSlot = {
   i?: string;
   /** move slugs (up to 4) */
   m?: string[];
-  /** Victory Points spread, 6 stats in HP/Atk/Def/SpA/SpD/Spe order */
+  /** Effort Values spread, 6 stats in HP/Atk/Def/SpA/SpD/Spe order */
   v?: [number, number, number, number, number, number];
 };
 

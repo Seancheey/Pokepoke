@@ -91,3 +91,57 @@ export function effectivenessAgainst(
 ): number {
   return defTypes.reduce((acc, d) => acc * EFFECTIVENESS[atkType][d], 1);
 }
+
+/**
+ * Type-chart multiplier after defender abilities that are visible from type
+ * alone. Move-shape abilities such as Bulletproof/Soundproof, contact clauses
+ * such as Fluffy's contact resistance, and HP/weather clauses are intentionally
+ * excluded because the team defense chart has no concrete incoming move.
+ */
+export function defensiveEffectivenessAgainst(
+  atkType: PokemonType,
+  defTypes: PokemonType[],
+  ability?: string | null,
+): number {
+  let mult = effectivenessAgainst(atkType, defTypes);
+
+  if (!ability) return mult;
+
+  const immuneByAbility: Record<string, PokemonType[]> = {
+    "dry-skin": ["water"],
+    "earth-eater": ["ground"],
+    "flash-fire": ["fire"],
+    "levitate": ["ground"],
+    "lightning-rod": ["electric"],
+    "motor-drive": ["electric"],
+    "sap-sipper": ["grass"],
+    "storm-drain": ["water"],
+    "volt-absorb": ["electric"],
+    "water-absorb": ["water"],
+    "well-baked-body": ["fire"],
+  };
+  if (immuneByAbility[ability]?.includes(atkType)) return 0;
+
+  if (ability === "wonder-guard" && mult <= 1) return 0;
+
+  if (mult > 1 && (ability === "filter" || ability === "solid-rock" || ability === "prism-armor")) {
+    mult *= 0.75;
+  }
+  if (ability === "thick-fat" && (atkType === "fire" || atkType === "ice")) {
+    mult *= 0.5;
+  }
+  if ((ability === "heatproof" || ability === "water-bubble") && atkType === "fire") {
+    mult *= 0.5;
+  }
+  if (ability === "purifying-salt" && atkType === "ghost") {
+    mult *= 0.5;
+  }
+  if (ability === "dry-skin" && atkType === "fire") {
+    mult *= 1.25;
+  }
+  if (ability === "fluffy" && atkType === "fire") {
+    mult *= 2;
+  }
+
+  return mult;
+}

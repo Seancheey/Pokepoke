@@ -177,7 +177,7 @@
     "statusFreeze": "冰凍",
     "hpPctLabel": "HP%",
     "stageLabel": "能力等級",
-    "vpLabel": "VP",
+    "evLabel": "EV",
     "field": "場地狀態",
     "weather": "天氣",
     "weatherNone": "—",
@@ -228,13 +228,14 @@
     "abilityLabel": "特性",
     "itemLabel": "道具",
     "movesLabel": "招式",
-    "vpLabel": "勝利點 (VP)",
-    "spreadPresetLabel": "努力值方案",
+    "evLabel": "努力點 (EV)",
+    "evHint": "每項最高 32,總和上限 66。",
+    "spreadPresetLabel": "努力點方案",
     "spreadPresetPlaceholder": "選擇方案…",
     "customSpread": "自訂",
-    "vpRemaining": "剩餘 {remaining} VP",
-    "vpOver": "超出 {over} VP",
-    "vpStat": {
+    "evRemaining": "剩餘 {remaining} EV",
+    "evOver": "超出 {over} EV",
+    "evStat": {
       "hp": "HP", "atk": "攻擊", "def": "防禦", "spa": "特攻", "spd": "特防", "spe": "速度"
     },
     "share": "分享",

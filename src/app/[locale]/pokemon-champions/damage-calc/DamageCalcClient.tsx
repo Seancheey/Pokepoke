@@ -73,12 +73,12 @@ function defaultSide(p: CalcRefPokemon | undefined, attacking: boolean): SideSta
   const item = top?.topItems[0]?.slug ?? "";
   const spread = top?.topSpreads[0];
   const nature = (spread?.nature ?? (attacking ? "Adamant" : "Bold")) as Nature;
-  // Default VP: top spread for attacker, defensive baseline for defender
+  // Default EV: top spread for attacker, defensive baseline for defender
   const vp: [number, number, number, number, number, number] = spread
     ? spread.vp
     : attacking
-    ? [4, 252, 0, 0, 0, 252]
-    : [252, 0, 252, 0, 4, 0];
+    ? [2, 32, 0, 0, 0, 32]
+    : [32, 0, 32, 0, 2, 0];
   return {
     slug: p?.slug ?? "",
     ability, item, nature,
@@ -482,20 +482,20 @@ function SidePanel({
         </SmallField>
       </div>
 
-      {/* VP inputs (compact: only the relevant offensive/defensive ones get full attention) */}
+      {/* EV inputs (compact: only the relevant offensive/defensive ones get full attention) */}
       <div className="mt-3">
         <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-          {t("vpLabel")}
+          {t("evLabel")}
         </div>
         <div className="mt-1 grid grid-cols-3 gap-1.5 text-xs">
           {(["HP","Atk","Def","SpA","SpD","Spe"] as const).map((label, i) => (
             <label key={label} className="flex items-center gap-1">
               <span className="w-8 shrink-0 text-zinc-500">{label}</span>
               <input
-                type="number" min={0} max={252} step={4}
+                type="number" min={0} max={32} step={1}
                 value={side.vp[i]}
                 onChange={(e) => {
-                  const v = Math.max(0, Math.min(252, parseInt(e.target.value) || 0));
+                  const v = Math.max(0, Math.min(32, parseInt(e.target.value) || 0));
                   setSide((s) => {
                     const next = [...s.vp] as [number, number, number, number, number, number];
                     next[i] = v;

@@ -177,7 +177,7 @@
     "statusFreeze": "こおり",
     "hpPctLabel": "HP割合",
     "stageLabel": "ランク補正",
-    "vpLabel": "VP",
+    "evLabel": "EV",
     "field": "場の状態",
     "weather": "天候",
     "weatherNone": "—",
@@ -228,13 +228,14 @@
     "abilityLabel": "とくせい",
     "itemLabel": "もちもの",
     "movesLabel": "わざ",
-    "vpLabel": "勝利ポイント (VP)",
+    "evLabel": "努力値 (EV)",
+    "evHint": "1ステータス最大32、合計66まで。",
     "spreadPresetLabel": "努力値プリセット",
     "spreadPresetPlaceholder": "プリセットを選択…",
     "customSpread": "カスタム",
-    "vpRemaining": "残り {remaining} VP",
-    "vpOver": "{over} VP オーバー",
-    "vpStat": {
+    "evRemaining": "残り {remaining} EV",
+    "evOver": "{over} EV オーバー",
+    "evStat": {
       "hp": "HP", "atk": "こうげき", "def": "ぼうぎょ", "spa": "とくこう", "spd": "とくぼう", "spe": "すばやさ"
     },
     "share": "共有",

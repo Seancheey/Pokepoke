@@ -8,7 +8,7 @@ import { TypeChip } from "@/components/TypeChip";
 import { Combobox, type ComboboxOption } from "@/components/Combobox";
 import type { PokemonType } from "@/lib/types";
 import { POKEMON_TYPES } from "@/lib/types";
-import { effectivenessAgainst } from "@/lib/type-chart";
+import { defensiveEffectivenessAgainst, effectivenessAgainst } from "@/lib/type-chart";
 import {
   encodeTeam,
   decodeTeam,
@@ -47,8 +47,8 @@ export type RefMove = { slug: string; name: string; type: string; category: stri
 export type RefAbility = { slug: string; name: string };
 export type RefItem = { slug: string; name: string };
 
-const MAX_VP = 510;
-const PER_STAT_CAP = 252;
+const MAX_EV = 66;
+const PER_STAT_CAP = 32;
 const STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"] as const;
 type StatKey = (typeof STAT_KEYS)[number];
 
@@ -66,7 +66,7 @@ export function TeamBuilderClient({
   initialTeam: TeamShare | null;
 }) {
   const t = useTranslations("TeamBuilder");
-  const tStat = useTranslations("TeamBuilder.vpStat");
+  const tStat = useTranslations("TeamBuilder.evStat");
   const sp = useSearchParams();
 
   // Build O(1) lookup maps once
@@ -342,7 +342,7 @@ function SlotCard({
   onRemove: () => void;
 }) {
   const t = useTranslations("TeamBuilder");
-  const tStat = useTranslations("TeamBuilder.vpStat");
+  const tStat = useTranslations("TeamBuilder.evStat");
 
   const p = pokemonBySlug.get(slot.s);
   if (!p) return null;
@@ -352,9 +352,9 @@ function SlotCard({
     validAbilities.push(p.hiddenAbility);
   }
 
-  const vp = slot.v ?? [0, 0, 0, 0, 0, 0];
-  const totalVp = vp.reduce((a, b) => a + b, 0);
-  const remaining = MAX_VP - totalVp;
+  const ev = slot.v ?? [0, 0, 0, 0, 0, 0];
+  const totalEv = ev.reduce((a, b) => a + b, 0);
+  const remaining = MAX_EV - totalEv;
 
   function setMove(slotIdx: number, val: string) {
     onMutate((s) => {
@@ -402,7 +402,7 @@ function SlotCard({
       <SlotBody
         p={p}
         slot={slot}
-        vp={vp}
+        ev={ev}
         remaining={remaining}
         validAbilities={validAbilities}
         abilityBySlug={abilityBySlug}
@@ -421,7 +421,7 @@ function SlotCard({
 function SlotBody({
   p,
   slot,
-  vp,
+  ev,
   remaining,
   validAbilities,
   abilityBySlug,
@@ -433,7 +433,7 @@ function SlotBody({
 }: {
   p: RefPokemon;
   slot: ShareSlot;
-  vp: number[];
+  ev: number[];
   remaining: number;
   validAbilities: string[];
   abilityBySlug: Map<string, RefAbility>;
@@ -444,7 +444,7 @@ function SlotBody({
   setStat: (idx: number, val: number) => void;
 }) {
   const t = useTranslations("TeamBuilder");
-  const tStat = useTranslations("TeamBuilder.vpStat");
+  const tStat = useTranslations("TeamBuilder.evStat");
 
   // Per-slot usage lookups (top moves/abilities/items/spreads with %)
   const pctByMove = new Map(p.usage?.topMoves.map((m) => [m.slug, m.pct]) ?? []);
@@ -485,7 +485,7 @@ function SlotBody({
 
   // Spread preset options
   const spreadPresets = p.usage?.topSpreads ?? [];
-  const currentSpreadKey = vp.join("-");
+  const currentSpreadKey = ev.join("-");
   const presetMatch = spreadPresets.find((s) => s.vp.join("-") === currentSpreadKey);
   const spreadOptions: ComboboxOption[] = spreadPresets.map((s) => {
     const key = `${s.nature}:${s.vp.join("/")}`;
@@ -580,11 +580,11 @@ function SlotBody({
         </Field>
       ) : null}
 
-      {/* VP inputs */}
+      {/* EV inputs */}
       <div>
         <div className="flex items-center justify-between text-xs">
           <span className="font-semibold uppercase tracking-wider text-zinc-500">
-            {t("vpLabel")}
+            {t("evLabel")}
           </span>
           <span
             className={cn(
@@ -597,8 +597,8 @@ function SlotBody({
             )}
           >
             {remaining < 0
-              ? t("vpOver", { over: -remaining })
-              : t("vpRemaining", { remaining })}
+              ? t("evOver", { over: -remaining })
+              : t("evRemaining", { remaining })}
           </span>
         </div>
         <div className="mt-1 grid grid-cols-2 gap-1.5">
@@ -611,8 +611,8 @@ function SlotBody({
                 type="number"
                 min={0}
                 max={PER_STAT_CAP}
-                step={4}
-                value={vp[i] ?? 0}
+                step={1}
+                value={ev[i] ?? 0}
                 onChange={(e) => setStat(i, parseInt(e.target.value) || 0)}
                 className="w-full rounded-md border border-zinc-300 bg-white px-1.5 py-0.5 text-right font-mono tabular-nums dark:border-zinc-700 dark:bg-zinc-900"
               />
@@ -659,7 +659,7 @@ function fmtMult(m: number | null): string {
   if (m == null) return "—";
   if (m === 0)  return "×0";
   if (Number.isInteger(m)) return `×${m}`;
-  return `×${m}`;
+  return `×${Number.isInteger(m * 100) ? m : +m.toFixed(2)}`;
 }
 
 function fmtNet(n: number): string {
@@ -724,11 +724,14 @@ function TeamDefenseTable({
           <MatrixHeader slots={team.slots} pokemonBySlug={pokemonBySlug} />
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {POKEMON_TYPES.map((atkType) => {
-              const cells: { mult: number }[] = team.slots.map((slot) => {
+              const cells: { mult: number; ability?: string; abilityApplied: boolean }[] = team.slots.map((slot) => {
                 const p = pokemonBySlug.get(slot.s);
-                if (!p) return { mult: 1 };
+                if (!p) return { mult: 1, abilityApplied: false };
                 const defTypes = [p.type1, p.type2].filter(Boolean) as PokemonType[];
-                return { mult: effectivenessAgainst(atkType, defTypes) };
+                const ability = slot.a ?? p.abilities[0] ?? undefined;
+                const raw = effectivenessAgainst(atkType, defTypes);
+                const mult = defensiveEffectivenessAgainst(atkType, defTypes, ability);
+                return { mult, ability, abilityApplied: mult !== raw };
               });
               const weak = cells.filter((c) => c.mult > 1).length;
               const resist = cells.filter((c) => c.mult < 1).length;
@@ -748,7 +751,13 @@ function TeamDefenseTable({
                     const tone = defenseTone(c.mult);
                     return (
                       <td key={i} className={cn("px-1.5 py-1.5 font-mono tabular-nums", tone.bg, tone.text)}>
-                        {fmtMult(c.mult)}
+                        <span
+                          className="inline-flex items-center gap-0.5"
+                          title={c.abilityApplied && c.ability ? `${c.ability.replace(/-/g, " ")}` : undefined}
+                        >
+                          {fmtMult(c.mult)}
+                          {c.abilityApplied ? <sup className="text-[9px] opacity-70">*</sup> : null}
+                        </span>
                       </td>
                     );
                   })}

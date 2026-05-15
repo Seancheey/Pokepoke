@@ -79,9 +79,9 @@ function natureMult(nat: Nature, stat: StatKey): number {
 // ─── Stat computation ────────────────────────────────────────────────────────
 
 /**
- * Stat at level 50 with Champions' VP-only system (no IVs).
- *   stat = floor( floor((2*base + VP/4) * level / 100) * nature )
- *   HP   = floor((2*base + VP/4) * level / 100) + level + 10  (no nature on HP)
+ * Stat at level 50 with Champions' Stat Point system.
+ * Champions has no editable IVs; neutral non-HP stats are base + 20 + SP,
+ * and HP is base + 75 + SP. Nature applies after Stat Points for non-HP.
  */
 export function computeStat(
   base: number,
@@ -90,9 +90,9 @@ export function computeStat(
   stat: StatKey,
   isHp = false,
 ): number {
-  const core = Math.floor(((2 * base + Math.floor(vp / 4)) * LEVEL) / 100);
-  if (isHp) return core + LEVEL + 10;
-  return Math.floor(core * natureMult(nature, stat)) + 5;
+  const statPoints = Math.max(0, Math.min(32, Math.floor(vp)));
+  if (isHp) return base + 75 + statPoints;
+  return Math.floor((base + 20 + statPoints) * natureMult(nature, stat));
 }
 
 /** Stat-stage multiplier per Gen 6+ rules. */
@@ -265,8 +265,10 @@ export function calc(input: CalcInput): CalcOutput | null {
   if (d.ability === "lightning-rod" && move.type === "electric") return zeroResult(d);
   if (d.ability === "motor-drive" && move.type === "electric") return zeroResult(d);
   if (d.ability === "flash-fire" && move.type === "fire") return zeroResult(d);
+  if (d.ability === "well-baked-body" && move.type === "fire") return zeroResult(d);
   if (d.ability === "sap-sipper" && move.type === "grass") return zeroResult(d);
   if (d.ability === "levitate" && move.type === "ground") return zeroResult(d);
+  if (d.ability === "earth-eater" && move.type === "ground") return zeroResult(d);
   if (d.ability === "dry-skin" && move.type === "water") return zeroResult(d);
 
   // ── Effective stats ──────────────────────────────────────────────────────
@@ -446,8 +448,14 @@ export function calc(input: CalcInput): CalcOutput | null {
   if (d.ability === "heatproof" && moveType === "fire") {
     dmg = Math.floor(dmg * 0.5); notes.push("Heatproof ×0.5");
   }
+  if (d.ability === "water-bubble" && moveType === "fire") {
+    dmg = Math.floor(dmg * 0.5); notes.push("Water Bubble ×0.5");
+  }
   if (d.ability === "thick-fat" && (moveType === "fire" || moveType === "ice")) {
     dmg = Math.floor(dmg * 0.5); notes.push("Thick Fat ×0.5");
+  }
+  if (d.ability === "purifying-salt" && moveType === "ghost") {
+    dmg = Math.floor(dmg * 0.5); notes.push("Purifying Salt ×0.5");
   }
   if (d.ability === "dry-skin" && moveType === "fire") {
     dmg = Math.floor(dmg * 1.25); notes.push("Dry Skin ×1.25");
