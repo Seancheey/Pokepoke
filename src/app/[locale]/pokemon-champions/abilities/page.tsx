@@ -25,13 +25,14 @@ export default async function AbilitiesListPage({
   const abilities = await prisma.ability.findMany({
     where: q
       ? {
+          usagePct: { gt: 0 },
           OR: [
             { name: { contains: q, mode: "insensitive" } },
             { nameI18n: { contains: q, mode: "insensitive" } },
             { slug: { contains: q, mode: "insensitive" } },
           ],
         }
-      : {},
+      : { usagePct: { gt: 0 } },
     orderBy: { usagePct: "desc" },
   });
 

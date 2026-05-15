@@ -42,6 +42,10 @@ export const ABILITY_OVERRIDES: Record<
     name:  { "zh-Hans": "反刍", "zh-Hant": "反芻" },
     short: { "zh-Hans": "吃下树果后,在下一回合结束时再次发动效果。", "zh-Hant": "吃下樹果後,在下一回合結束時再次發動效果。" },
   },
+  "dragonize": {
+    name:  { "zh-Hans": "龙化", "zh-Hant": "龍化" },
+    short: { "zh-Hans": "一般属性招式变为龙属性,威力提升20%。", "zh-Hant": "一般屬性招式變為龍屬性,威力提升20%。" },
+  },
   "earth-eater": {
     name:  { "zh-Hans": "食土", "zh-Hant": "食土" },
     short: { "zh-Hans": "受到地面属性招式时不会损血反而回复HP。", "zh-Hant": "受到地面屬性招式時不會損血反而回復HP。" },
@@ -66,6 +70,10 @@ export const ABILITY_OVERRIDES: Record<
     name:  { "zh-Hans": "残留之香", "zh-Hant": "殘留之香" },
     short: { "zh-Hans": "接触自己的对手特性变为残留之香。", "zh-Hant": "接觸自己的對手特性變為殘留之香。" },
   },
+  "mega-sol": {
+    name:  { "zh-Hans": "超级日光", "zh-Hant": "超級日光" },
+    short: { "zh-Hans": "即使不是大晴天,也能像在强烈日照下一样使用招式。", "zh-Hant": "即使不是大晴天,也能像在強烈日照下一樣使用招式。" },
+  },
   "mycelium-might": {
     name:  { "zh-Hans": "菌丝之力", "zh-Hant": "菌絲之力" },
     short: { "zh-Hans": "使用变化招式时必定后手,但无视对方特性。", "zh-Hant": "使用變化招式時必定後手,但無視對方特性。" },
@@ -77,6 +85,10 @@ export const ABILITY_OVERRIDES: Record<
   "orichalcum-pulse": {
     name:  { "zh-Hans": "绯红脉动", "zh-Hant": "緋紅脈動" },
     short: { "zh-Hans": "登场时让天气变为大晴天;日照强烈时攻击提升。", "zh-Hant": "登場時讓天氣變為大晴天;日照強烈時攻擊提升。" },
+  },
+  "piercing-drill": {
+    name:  { "zh-Hans": "贯通钻头", "zh-Hant": "貫通鑽頭" },
+    short: { "zh-Hans": "接触类招式能贯穿守住类防护,但只造成原本1/4的伤害。", "zh-Hant": "接觸類招式能貫穿守住類防護,但只造成原本1/4的傷害。" },
   },
   "protosynthesis": {
     name:  { "zh-Hans": "古代活性", "zh-Hant": "古代活性" },
@@ -101,6 +113,10 @@ export const ABILITY_OVERRIDES: Record<
   "sharpness": {
     name:  { "zh-Hans": "锋锐", "zh-Hant": "鋒銳" },
     short: { "zh-Hans": "提升切斩类招式的威力。", "zh-Hant": "提升切斬類招式的威力。" },
+  },
+  "spicy-spray": {
+    name:  { "zh-Hans": "辣味喷雾", "zh-Hant": "辣味噴霧" },
+    short: { "zh-Hans": "受到招式伤害时,让攻击者灼伤。", "zh-Hant": "受到招式傷害時,讓攻擊者灼傷。" },
   },
   "supreme-overlord": {
     name:  { "zh-Hans": "大将", "zh-Hant": "大將" },

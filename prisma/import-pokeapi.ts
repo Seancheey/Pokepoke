@@ -23,6 +23,8 @@ import { parse } from "csv-parse/sync";
 import fs from "node:fs";
 import path from "node:path";
 import { ABILITY_OVERRIDES } from "./ability-overrides";
+import { ITEM_OVERRIDES } from "./item-overrides";
+import { MOVE_OVERRIDES } from "./move-overrides";
 
 const DATA = path.join(__dirname, "../data/pokeapi");
 const prisma = new PrismaClient();
@@ -141,13 +143,38 @@ function i18nJson(m: Record<Locale, string> | undefined): string {
   return JSON.stringify(out);
 }
 
+function mergeI18n(
+  base: Record<Locale, string> | undefined,
+  override: Partial<Record<Locale, string>> | undefined,
+): Record<Locale, string> {
+  const out = {
+    en: base?.en || "",
+    ja: base?.ja || "",
+    "zh-Hans": base?.["zh-Hans"] || "",
+    "zh-Hant": base?.["zh-Hant"] || "",
+  };
+  if (!override) return out;
+  for (const loc of ["en", "ja", "zh-Hans", "zh-Hant"] as Locale[]) {
+    if (!out[loc] && override[loc]) out[loc] = override[loc];
+  }
+  return out;
+}
+
 // ─── Smogon usage stats overlay ──────────────────────────────────────────────
 
 // Pokémon Champions VGC Regulation M-A — the actual competitive format for
 // Pokémon Champions (NOT the same as gen9vgc2026regi which is Scarlet/Violet's
-// VGC). Format ID on Smogon: gen9championsvgc2026regma. Pull from the 1760+
-// elo cutoff so the stats represent high-skill play rather than ladder noise.
-const SMOGON_FILE = "smogon-championsvgc2026regma-1760.json";
+// VGC). Prefer the all-ladder chaos dump because it has the best roster and
+// low-usage move/item/spread coverage; fall back to high-cutoff files if the
+// broader snapshot has not been refreshed locally yet.
+const SMOGON_FILES = [
+  "smogon-championsvgc2026regma-0.json",
+  "smogon-championsvgc2026regma-1500.json",
+  "smogon-championsvgc2026regma-1760.json",
+];
+const TOP_MOVE_COUNT = 16;
+const TOP_ITEM_COUNT = 10;
+const TOP_SPREAD_COUNT = 10;
 
 type SmogonEntry = {
   "Raw count": number;
@@ -169,14 +196,26 @@ function condense(slug: string): string {
 // Examples: "Incineroar" → "incineroar", "Calyrex-Shadow" → "calyrex-shadow",
 // "Indeedee-F" → "indeedee-female", "Iron Hands" → "iron-hands".
 const SMOGON_NAME_FIXUPS: Record<string, string> = {
+  "aegislash": "aegislash-shield",
+  "basculegion": "basculegion-male",
   "indeedee-f": "indeedee-female",
   "indeedee-m": "indeedee-male",
   "basculegion-f": "basculegion-female",
+  "lycanroc": "lycanroc-midday",
+  "maushold": "maushold-family-of-four",
+  "meowstic": "meowstic-male",
   "meowstic-f": "meowstic-female",
+  "meowstic-f-mega": "meowstic-mega",
+  "meowstic-m-mega": "meowstic-mega",
+  "mimikyu": "mimikyu-disguised",
+  "morpeko": "morpeko-full-belly",
   "oinkologne-f": "oinkologne-female",
+  "palafin": "palafin-zero",
+  "tauros-paldea-aqua": "tauros-paldea-aqua-breed",
+  "tauros-paldea-blaze": "tauros-paldea-blaze-breed",
 };
 function smogonNameToSlug(smogonName: string, knownSlugs: Set<string>): string | null {
-  const lower = smogonName.toLowerCase().replace(/\s+/g, "-");
+  const lower = smogonName.toLowerCase().replace(/\./g, "").replace(/\s+/g, "-");
   if (knownSlugs.has(lower)) return lower;
   if (SMOGON_NAME_FIXUPS[lower] && knownSlugs.has(SMOGON_NAME_FIXUPS[lower])) {
     return SMOGON_NAME_FIXUPS[lower];
@@ -185,6 +224,66 @@ function smogonNameToSlug(smogonName: string, knownSlugs: Set<string>): string |
   // work; Smogon already disambiguates therian/origin where it matters, so default
   // forms map to the species slug).
   return null;
+}
+
+function smogonUsageRatio(entry: SmogonEntry, totalBattles: number): number {
+  if (typeof entry.usage === "number" && Number.isFinite(entry.usage)) {
+    return entry.usage;
+  }
+  const raw = entry["Raw count"] ?? 0;
+  return totalBattles > 0 ? raw / totalBattles : 0;
+}
+
+function mergeNumberRecords(target: Record<string, number>, source: Record<string, number> | undefined) {
+  for (const [k, v] of Object.entries(source ?? {})) {
+    target[k] = (target[k] ?? 0) + v;
+  }
+}
+
+function addWeightedUsage(
+  out: Map<string, number>,
+  raw: Record<string, number>,
+  monUsageRatio: number,
+  mapKey: (k: string) => string | null,
+  kind: "single" | "moves",
+) {
+  const entries = Object.entries(raw);
+  const total = entries.reduce((s, [, v]) => s + v, 0);
+  if (total <= 0 || monUsageRatio <= 0) return;
+  const denom = kind === "moves" ? total / 4 : total;
+  if (denom <= 0) return;
+
+  for (const [k, v] of entries) {
+    const slug = mapKey(k);
+    if (!slug) continue;
+    const perMonRatio = Math.min(1, v / denom);
+    out.set(slug, (out.get(slug) ?? 0) + monUsageRatio * perMonRatio);
+  }
+}
+
+function normalizeWeightedUsage(weightBySlug: Map<string, number>, denominator: number): Map<string, number> {
+  const out = new Map<string, number>();
+  if (denominator <= 0) return out;
+  for (const [slug, weight] of weightBySlug) {
+    out.set(slug, +((weight / denominator) * 100).toFixed(6));
+  }
+  return out;
+}
+
+function smogonItemToSyntheticSlug(itemName: string): string {
+  return itemName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function titleCaseFromSlug(slug: string): string {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 // Smogon's chaos JSON uses weighted occurrence counts, NOT percentages. Normalize:
@@ -212,7 +311,7 @@ function topN<T extends string>(
 }
 
 function parseSpread(key: string): { nature: string; vp: [number, number, number, number, number, number] } | null {
-  // "Adamant:252/0/4/0/0/252"
+  // "Adamant:2/32/0/0/0/32"
   const [nature, evs] = key.split(":");
   if (!nature || !evs) return null;
   const parts = evs.split("/").map((s) => parseInt(s, 10));
@@ -267,7 +366,6 @@ async function main() {
   const pokemonRows = readCsv<{
     id: string; identifier: string; species_id: string; is_default: string;
   }>("pokemon.csv");
-  const speciesRows = readCsv<{ id: string; identifier: string }>("pokemon_species.csv");
   const speciesNameRows = readCsv<Record<string, string>>("pokemon_species_names.csv");
   const statRows = readCsv<{ pokemon_id: string; stat_id: string; base_stat: string }>("pokemon_stats.csv");
   const typeRows = readCsv<{ pokemon_id: string; type_id: string; slot: string }>("pokemon_types.csv");
@@ -362,9 +460,9 @@ async function main() {
   );
 
   // ─── Smogon usage stats ─────────────────────────────────────────────────────
-  const smogonPath = path.join(DATA, SMOGON_FILE);
-  const smogon = fs.existsSync(smogonPath)
-    ? (JSON.parse(fs.readFileSync(smogonPath, "utf8")) as SmogonDump)
+  const smogonFile = SMOGON_FILES.find((file) => fs.existsSync(path.join(DATA, file))) ?? null;
+  const smogon = smogonFile
+    ? (JSON.parse(fs.readFileSync(path.join(DATA, smogonFile), "utf8")) as SmogonDump)
     : null;
 
   // Build reverse-lookup maps from condensed slug → original slug for items / abilities / moves.
@@ -379,6 +477,27 @@ async function main() {
   const itemSlugByCondensed = new Map<string, string>(
     itemMetaRaw.map((i) => [condense(i.identifier), i.identifier]),
   );
+  const syntheticItemNameBySlug = new Map<string, string>();
+  if (smogon) {
+    for (const entry of Object.values(smogon.data)) {
+      for (const itemName of Object.keys(entry.Items ?? {})) {
+        if (condense(itemName) === "nothing") continue;
+        const condensed = condense(itemName);
+        if (itemSlugByCondensed.has(condensed)) continue;
+        const slug = smogonItemToSyntheticSlug(itemName);
+        if (!slug) continue;
+        itemSlugByCondensed.set(condensed, slug);
+        syntheticItemNameBySlug.set(slug, itemName);
+      }
+    }
+  }
+
+  const mapSmogonAbility = (name: string) => abilitySlugByCondensed.get(condense(name)) ?? null;
+  const mapSmogonItem = (name: string) => {
+    if (condense(name) === "nothing") return null;
+    return itemSlugByCondensed.get(condense(name)) ?? null;
+  };
+  const mapSmogonMove = (name: string) => moveSlugByCondensed.get(condense(name)) ?? null;
 
   const allPokemonSlugs = new Set(pokemonRows.map((p) => p.identifier));
 
@@ -392,33 +511,67 @@ async function main() {
   };
   const usageBySlug = new Map<string, UsageStats>();
   const rawCountBySlug = new Map<string, number>();
+  const usageRatioBySlug = new Map<string, number>();
+  const observedMoveSlugsByPokemon = new Map<string, Set<string>>();
+  const moveUsageWeightBySlug = new Map<string, number>();
+  const abilityUsageWeightBySlug = new Map<string, number>();
+  const itemUsageWeightBySlug = new Map<string, number>();
+  let moveSlotWeight = 0;
+  let abilitySlotWeight = 0;
+  let itemSlotWeight = 0;
+
+  const totalBattles = (smogon?.info?.["number of battles"] as number) ?? 1;
 
   if (smogon) {
     const monEntries = Object.entries(smogon.data);
+    const mergedBySlug = new Map<string, SmogonEntry>();
     let unmapped = 0;
     for (const [smogonName, entry] of monEntries) {
       const slug = smogonNameToSlug(smogonName, allPokemonSlugs);
       if (!slug) { unmapped++; continue; }
+      let merged = mergedBySlug.get(slug);
+      if (!merged) {
+        merged = { "Raw count": 0, Abilities: {}, Items: {}, Moves: {}, Spreads: {}, usage: 0 };
+        mergedBySlug.set(slug, merged);
+      }
+      merged["Raw count"] += entry["Raw count"] ?? 0;
+      merged.usage = (merged.usage ?? 0) + smogonUsageRatio(entry, totalBattles);
+      mergeNumberRecords(merged.Abilities, entry.Abilities);
+      mergeNumberRecords(merged.Items, entry.Items);
+      mergeNumberRecords(merged.Moves, entry.Moves);
+      mergeNumberRecords(merged.Spreads, entry.Spreads);
+    }
+
+    for (const [slug, entry] of mergedBySlug) {
       const raw = entry["Raw count"] ?? 0;
       if (raw <= 0) continue;
+      const monUsageRatio = smogonUsageRatio(entry, totalBattles);
       rawCountBySlug.set(slug, raw);
+      usageRatioBySlug.set(slug, monUsageRatio);
+
+      abilitySlotWeight += monUsageRatio;
+      itemSlotWeight += monUsageRatio;
+      moveSlotWeight += monUsageRatio * 4;
+      addWeightedUsage(abilityUsageWeightBySlug, entry.Abilities ?? {}, monUsageRatio, mapSmogonAbility, "single");
+      addWeightedUsage(itemUsageWeightBySlug, entry.Items ?? {}, monUsageRatio, mapSmogonItem, "single");
+      addWeightedUsage(moveUsageWeightBySlug, entry.Moves ?? {}, monUsageRatio, mapSmogonMove, "moves");
+
+      observedMoveSlugsByPokemon.set(
+        slug,
+        new Set(
+          Object.keys(entry.Moves ?? {})
+            .map(mapSmogonMove)
+            .filter((moveSlug): moveSlug is string => !!moveSlug),
+        ),
+      );
       const spreadTotal = Object.values(entry.Spreads ?? {}).reduce((s, v) => s + v, 0);
       const stats: UsageStats = {
-        topAbilities: topN(entry.Abilities ?? {}, 3, (k) =>
-          abilitySlugByCondensed.get(condense(k)) ?? null,
-          "single",
-        ),
-        topItems: topN(entry.Items ?? {}, 6, (k) =>
-          itemSlugByCondensed.get(condense(k)) ?? null,
-          "single",
-        ),
-        topMoves: topN(entry.Moves ?? {}, 8, (k) =>
-          moveSlugByCondensed.get(condense(k)) ?? null,
-          "moves",
-        ),
+        topAbilities: topN(entry.Abilities ?? {}, 4, mapSmogonAbility, "single"),
+        topItems: topN(entry.Items ?? {}, TOP_ITEM_COUNT, mapSmogonItem, "single"),
+        topMoves: topN(entry.Moves ?? {}, TOP_MOVE_COUNT, mapSmogonMove, "moves"),
         topSpreads: Object.entries(entry.Spreads ?? {})
           .sort((a, b) => b[1] - a[1])
-          .slice(0, 5)
+          .slice(0, TOP_SPREAD_COUNT)
           .flatMap(([k, v]) => {
             const parsed = parseSpread(k);
             if (!parsed) return [];
@@ -428,22 +581,24 @@ async function main() {
               pct: spreadTotal > 0 ? +((v / spreadTotal) * 100).toFixed(1) : 0,
             }];
           }),
-        source: SMOGON_FILE,
+        source: smogonFile ?? "none",
       };
       usageBySlug.set(slug, stats);
     }
-    console.log(`  Smogon: ${monEntries.length} mons, ${unmapped} unmapped, ${usageBySlug.size} mapped`);
+    console.log(`  Smogon (${smogonFile}): ${monEntries.length} mons, ${unmapped} unmapped, ${usageBySlug.size} mapped`);
   }
 
-  // Derive rank + usagePct from Smogon raw counts.
-  // usagePct = (raw / total_battles) * 100 — % of battles that featured this mon.
-  const totalBattles = (smogon?.info?.["number of battles"] as number) ?? 1;
-  const sortedByRaw = [...rawCountBySlug.entries()].sort((a, b) => b[1] - a[1]);
+  const globalAbilityUsagePct = normalizeWeightedUsage(abilityUsageWeightBySlug, abilitySlotWeight);
+  const globalItemUsagePct = normalizeWeightedUsage(itemUsageWeightBySlug, itemSlotWeight);
+  const globalMoveUsagePct = normalizeWeightedUsage(moveUsageWeightBySlug, moveSlotWeight);
+
+  // Derive rank + usagePct from Smogon's weighted usage field.
+  const sortedByUsage = [...usageRatioBySlug.entries()].sort((a, b) => b[1] - a[1]);
   const smogonRankBySlug = new Map<string, { rank: number; usagePct: number }>();
-  sortedByRaw.forEach(([slug, raw], i) => {
+  sortedByUsage.forEach(([slug, usageRatio], i) => {
     smogonRankBySlug.set(slug, {
       rank: i + 1,
-      usagePct: totalBattles > 0 ? +((raw / totalBattles) * 100).toFixed(1) : 0,
+      usagePct: +(usageRatio * 100).toFixed(1),
     });
   });
 
@@ -506,8 +661,11 @@ async function main() {
       ? smogonOverlay
       : (smogonOverlay ?? overlayBySpecies.get(p.identifier));
     const usageStats = usageBySlug.get(p.identifier) ?? null;
-    let learnableMoves = Array.from(learnsetByPokemonId.get(monId) ?? []).sort();
-    if (!isDefault && learnableMoves.length === 0) {
+    const observedChampionsMoves = observedMoveSlugsByPokemon.get(p.identifier);
+    let learnableMoves = observedChampionsMoves?.size
+      ? Array.from(observedChampionsMoves).sort()
+      : Array.from(learnsetByPokemonId.get(monId) ?? []).sort();
+    if (!observedChampionsMoves?.size && !isDefault && learnableMoves.length === 0) {
       const defaultId = defaultMonIdBySpecies.get(speciesId);
       if (defaultId != null) {
         learnableMoves = Array.from(learnsetByPokemonId.get(defaultId) ?? []).sort();
@@ -585,6 +743,7 @@ async function main() {
     const id = num(m.id);
     const namesMap = moveNames.get(id);
     const flavor = moveFlavor.get(id);
+    const override = MOVE_OVERRIDES[m.identifier];
     const enName = namesMap?.en ?? m.identifier;
     const effectEn = flavor?.en ?? "";
     // Long-form prose lookup by effect_id; substitute the $effect_chance placeholder.
@@ -592,11 +751,16 @@ async function main() {
       moveEffectById.get(num(m.effect_id))?.en ?? "",
       m.effect_chance,
     );
-    const longI18n = { en: proseEn || effectEn, ja: flavor?.ja ?? "", "zh-Hans": flavor?.["zh-Hans"] ?? "", "zh-Hant": flavor?.["zh-Hant"] ?? "" };
+    const mergedName = mergeI18n(namesMap, override?.name);
+    const shortI18n = mergeI18n(flavor, override?.short);
+    const longI18n = mergeI18n(
+      { en: proseEn || effectEn, ja: flavor?.ja ?? "", "zh-Hans": flavor?.["zh-Hans"] ?? "", "zh-Hant": flavor?.["zh-Hant"] ?? "" },
+      override?.long ?? override?.short,
+    );
     return {
       slug: m.identifier,
       name: enName,
-      nameI18n: i18nJson(namesMap),
+      nameI18n: i18nJson(mergedName),
       type: TYPE_ID_TO_SLUG[num(m.type_id)] ?? "normal",
       category: DAMAGE_CLASS_ID_TO_SLUG[num(m.damage_class_id)] ?? "status",
       power: maybeNum(m.power),
@@ -606,10 +770,10 @@ async function main() {
       targetShape: m.target_id, // raw target id for now; can map to slugs later
       makesContact: false, // PokeAPI puts this under move_flag_map; skip for v1
       effectText: effectEn,
-      effectI18n: i18nJson(flavor),
-      effectLongI18n: i18nJson(longI18n as Record<Locale, string>),
+      effectI18n: i18nJson(shortI18n),
+      effectLongI18n: i18nJson(longI18n),
       effectChance: maybeNum(m.effect_chance),
-      usagePct: 0,
+      usagePct: globalMoveUsagePct.get(m.identifier) ?? 0,
     };
   });
 
@@ -681,7 +845,7 @@ async function main() {
         shortDescI18n: i18nJson(shortI18n),
         longDesc: longDescEn,
         longDescI18n: i18nJson(longI18n),
-        usagePct: 0,
+        usagePct: globalAbilityUsagePct.get(a.identifier) ?? 0,
       };
     });
 
@@ -719,26 +883,9 @@ async function main() {
     return "held"; // catch-all
   }
 
-  // Categories that survive in Pokémon Champions (battle-relevant only).
-  // Anything outside this set + non-berry items gets games=[] and is hidden
-  // from the items list view.
-  const CHAMPIONS_CATEGORIES = new Set([
-    7,  // Type protection
-    12, // Held items
-    13, // Choice
-    15, // Bad held items (Flame Orb, Toxic Orb)
-    17, // Plates
-    19, // Type enhancement (Charcoal, Mystic Water, Dragon Fang, etc.)
-    36, // Scarves
-    44, // Mega Stones
-    45, // Memories (Silvally)
-    46, // Z-Crystals (deprecated in Champions but still recognizably battle items)
-    50, // Nature mints
-  ]);
-  function gamesFor(slug: string, categoryId: number): string[] {
-    if (CHAMPIONS_CATEGORIES.has(categoryId)) return ["pokemon-champions"];
-    if (slug.endsWith("-berry")) return ["pokemon-champions"]; // all berries can be held
-    return []; // Pokéballs, healing, evo stones, key items, mail, TMs, repels, etc.
+  const championsItemSlugs = new Set(globalItemUsagePct.keys());
+  function gamesFor(slug: string): string[] {
+    return championsItemSlugs.has(slug) ? ["pokemon-champions"] : [];
   }
 
   const itemRowsToInsert = itemMeta.map((it) => {
@@ -746,34 +893,50 @@ async function main() {
     const namesMap = itemNames.get(id);
     const flavor = itemFlavor.get(id);
     const prose = itemProseById.get(id);
+    const override = ITEM_OVERRIDES[it.identifier];
     const enName = namesMap?.en ?? it.identifier;
     const shortDescEn = prose?.short || flavor?.en || "";
     const longDescEn = prose?.long || prose?.short || flavor?.en || "";
-    const longI18n: Record<Locale, string> = {
-      en: longDescEn,
-      ja: flavor?.ja ?? "",
-      "zh-Hans": flavor?.["zh-Hans"] ?? "",
-      "zh-Hant": flavor?.["zh-Hant"] ?? "",
-    };
-    const shortI18n: Record<Locale, string> = {
-      en: shortDescEn,
-      ja: flavor?.ja ?? "",
-      "zh-Hans": flavor?.["zh-Hans"] ?? "",
-      "zh-Hant": flavor?.["zh-Hant"] ?? "",
-    };
+    const mergedName = mergeI18n(namesMap, override?.name);
+    const shortI18n = mergeI18n({
+      en: shortDescEn, ja: flavor?.ja ?? "", "zh-Hans": flavor?.["zh-Hans"] ?? "", "zh-Hant": flavor?.["zh-Hant"] ?? "",
+    }, override?.short);
+    const longI18n = mergeI18n({
+      en: longDescEn, ja: flavor?.ja ?? "", "zh-Hans": flavor?.["zh-Hans"] ?? "", "zh-Hant": flavor?.["zh-Hant"] ?? "",
+    }, override?.long ?? override?.short);
     const cid = num(it.category_id);
     return {
       slug: it.identifier,
       name: enName,
-      nameI18n: i18nJson(namesMap),
+      nameI18n: i18nJson(mergedName),
       category: categoryFor(it.identifier, cid),
-      description: shortDescEn,
+      description: shortDescEn || override?.short?.en || "",
       descI18n: i18nJson(shortI18n),
       descLongI18n: i18nJson(longI18n),
-      games: JSON.stringify(gamesFor(it.identifier, cid)),
-      usagePct: 0,
+      games: JSON.stringify(gamesFor(it.identifier)),
+      usagePct: globalItemUsagePct.get(it.identifier) ?? 0,
     };
   });
+
+  for (const slug of syntheticItemNameBySlug.keys()) {
+    if (!championsItemSlugs.has(slug)) continue;
+    const override = ITEM_OVERRIDES[slug];
+    const name = override?.name?.en ?? titleCaseFromSlug(slug);
+    const desc = override?.short?.en ?? "Allows a compatible Pokémon to Mega Evolve in Pokémon Champions.";
+    const nameI18n = mergeI18n(undefined, override?.name ?? { en: name });
+    const descI18n = mergeI18n(undefined, override?.short ?? { en: desc });
+    itemRowsToInsert.push({
+      slug,
+      name,
+      nameI18n: i18nJson(nameI18n),
+      category: "mega-stone",
+      description: desc,
+      descI18n: i18nJson(descI18n),
+      descLongI18n: i18nJson(mergeI18n(descI18n, override?.long)),
+      games: JSON.stringify(["pokemon-champions"]),
+      usagePct: globalItemUsagePct.get(slug) ?? 0,
+    });
+  }
 
   await prisma.item.deleteMany();
   await prisma.item.createMany({ data: itemRowsToInsert });

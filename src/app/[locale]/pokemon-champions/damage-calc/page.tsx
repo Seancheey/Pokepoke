@@ -32,7 +32,9 @@ export default async function DamageCalcPage({
     }),
     prisma.move.findMany(),
     prisma.ability.findMany(),
-    prisma.item.findMany(),
+    prisma.item.findMany({
+      where: { games: { contains: '"pokemon-champions"' } },
+    }),
   ]);
 
   const refPokemon: CalcRefPokemon[] = pokemon.map((p) => {

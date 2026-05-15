@@ -14,7 +14,9 @@ mkdir -p data/pokeapi
 
 PA_BASE="https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv"
 SMOGON_FORMAT="gen9championsvgc2026regma"
-SMOGON_CUTOFF="1760"   # elo cutoff — high-skill ladder, smaller file, cleaner stats
+# 0 gives the best roster / low-usage move-item-spread coverage. 1760 remains
+# useful as a compact high-skill fallback if the broad dump is unavailable.
+SMOGON_CUTOFFS=("0" "1760")
 
 # ─── 1) PokeAPI CSVs ─────────────────────────────────────────────────────────
 echo "→ Refreshing PokeAPI CSVs from $PA_BASE"
@@ -25,7 +27,7 @@ PA_FILES=(
   moves move_names move_flavor_text move_effect_prose move_damage_classes
   items item_names item_flavor_text item_prose item_categories
   item_category_prose item_flags item_flag_map
-  type_efficacy types type_names languages
+  type_efficacy types type_names languages version_groups
 )
 fail=0
 for f in "${PA_FILES[@]}"; do
@@ -46,24 +48,26 @@ months+=("$(date +%Y-%m)")
 months+=("$(date -v-1m +%Y-%m)")
 months+=("$(date -v-2m +%Y-%m)")
 
-target="data/pokeapi/smogon-championsvgc2026regma-${SMOGON_CUTOFF}.json"
-got=""
-for m in "${months[@]}"; do
-  url="https://www.smogon.com/stats/$m/chaos/${SMOGON_FORMAT}-${SMOGON_CUTOFF}.json"
-  echo "  trying $m..."
-  if curl -sfL "$url" -o "$target.tmp"; then
-    mv "$target.tmp" "$target"
-    got="$m"
-    break
-  fi
-  rm -f "$target.tmp"
-done
+for cutoff in "${SMOGON_CUTOFFS[@]}"; do
+  target="data/pokeapi/smogon-championsvgc2026regma-${cutoff}.json"
+  got=""
+  for m in "${months[@]}"; do
+    url="https://www.smogon.com/stats/$m/chaos/${SMOGON_FORMAT}-${cutoff}.json"
+    echo "  trying $m cutoff $cutoff..."
+    if curl -sfL "$url" -o "$target.tmp"; then
+      mv "$target.tmp" "$target"
+      got="$m"
+      break
+    fi
+    rm -f "$target.tmp"
+  done
 
-if [[ -z "$got" ]]; then
-  echo "  ✗ no Smogon chaos JSON available in the last 3 months — aborting"
-  exit 1
-fi
-echo "  Smogon stats: ✓ using $got/$SMOGON_FORMAT-$SMOGON_CUTOFF.json ($(du -h "$target" | cut -f1))"
+  if [[ -z "$got" ]]; then
+    echo "  ✗ no Smogon chaos JSON for cutoff $cutoff in the last 3 months — aborting"
+    exit 1
+  fi
+  echo "  Smogon stats: ✓ using $got/$SMOGON_FORMAT-$cutoff.json ($(du -h "$target" | cut -f1))"
+done
 
 # ─── 3) Reimport into Postgres ──────────────────────────────────────────────
 echo "→ Re-importing to Postgres..."

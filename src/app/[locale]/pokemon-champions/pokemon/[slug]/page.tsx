@@ -43,13 +43,23 @@ export default async function PokemonDetailPage({
   // Look up DB rows for the abilities + moves this Pokémon has, so we can show
   // localized names and link to detail pages.
   const allAbilitySlugs = [...new Set([...abilityList, ...(p.hiddenAbility ? [p.hiddenAbility] : [])])];
-  const [abilityRows, moveRows] = await Promise.all([
+  const [abilityRows, moveRows, formRows] = await Promise.all([
     allAbilitySlugs.length > 0
       ? prisma.ability.findMany({ where: { slug: { in: allAbilitySlugs } } })
       : Promise.resolve([]),
     learnableMoveSlugs.length > 0
       ? prisma.move.findMany({ where: { slug: { in: learnableMoveSlugs } } })
       : Promise.resolve([]),
+    prisma.pokemon.findMany({
+      where: {
+        dexNo: p.dexNo,
+        OR: [
+          { slug: p.slug },
+          { games: { contains: '"pokemon-champions"' } },
+        ],
+      },
+      orderBy: [{ slug: "asc" }],
+    }),
   ]);
 
   const abilityNameBySlug = new Map(
@@ -77,6 +87,9 @@ export default async function PokemonDetailPage({
     pp: m.pp,
     usagePct: pctByMove.get(m.slug),
   }));
+  const formOptions = formRows.some((f) => f.slug.includes("-mega"))
+    ? formRows
+    : [];
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
@@ -106,6 +119,32 @@ export default async function PokemonDetailPage({
             <TypeChip type={p.type1 as PokemonType} />
             {p.type2 ? <TypeChip type={p.type2 as PokemonType} /> : null}
           </div>
+          {formOptions.length > 1 ? (
+            <div className="mt-4">
+              <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                {t("forms")}
+              </div>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {formOptions.map((form) => {
+                  const active = form.slug === p.slug;
+                  return (
+                    <Link
+                      key={form.slug}
+                      href={`/pokemon-champions/pokemon/${form.slug}`}
+                      aria-current={active ? "page" : undefined}
+                      className={`rounded-md border px-2.5 py-1 text-xs font-semibold ${
+                        active
+                          ? "border-red-500 bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300"
+                          : "border-zinc-200 bg-zinc-50 text-zinc-700 hover:border-red-300 hover:text-red-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                      }`}
+                    >
+                      {localizedPokemonName(form, loc)}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
           <div className="mt-3 flex flex-wrap gap-4 text-sm text-zinc-600 dark:text-zinc-400">
             <span>
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">{t("usage")}</span>{" "}

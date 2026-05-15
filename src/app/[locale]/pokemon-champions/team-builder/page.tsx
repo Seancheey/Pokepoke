@@ -34,7 +34,9 @@ export default async function TeamBuilderPage({
     }),
     prisma.move.findMany(),
     prisma.ability.findMany(),
-    prisma.item.findMany(),
+    prisma.item.findMany({
+      where: { games: { contains: '"pokemon-champions"' } },
+    }),
   ]);
 
   // Trim reference rows to only the fields the client needs (cuts ~30% off the payload).
