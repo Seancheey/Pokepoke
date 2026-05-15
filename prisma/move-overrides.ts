@@ -225,7 +225,7 @@ export const MOVE_OVERRIDES: Record<string, MoveOverride> = {
     },
   ),
   "mortal-spin": ov(
-    { "zh-Hans": "晶光转转", "zh-Hant": "晶光轉轉" },
+    { "zh-Hans": "扫尾拍弹", "zh-Hant": "掃尾拍彈" },
     {
       ja: "回転して攻撃し、しめつける技ややどりぎのタネなどを取り除く。相手を毒にする。",
       "zh-Hans": "旋转攻击并解除绑紧、寄生种子等效果。还会使对方宝可梦中毒。",
@@ -416,4 +416,410 @@ export const MOVE_OVERRIDES: Record<string, MoveOverride> = {
       "zh-Hant": "讓全身包覆水流撞向目標。自己也會受到相當大的傷害。",
     },
   ),
+
+  // ─── Gen 9 / Champions moves missing from PokeAPI zh-Hans/zh-Hant ─────────
+  "barb-barrage": ov(
+    { "zh-Hans": "毒针千击", "zh-Hant": "毒針千擊" },
+    {
+      ja: "無数の毒針で攻撃する。相手が毒状態のときは威力が2倍になる。",
+      "zh-Hans": "用无数毒针进行攻击。当目标处于中毒状态时，威力会变成２倍。",
+      "zh-Hant": "用無數毒針進行攻擊。當目標處於中毒狀態時，威力會變成２倍。",
+    },
+  ),
+  "blazing-torque": ov(
+    { "zh-Hans": "灼热扭矩", "zh-Hant": "灼熱扭矩" },
+    {
+      ja: "灼熱のエンジン音とともに体当たりを浴びせる。相手をやけど状態にすることがある。",
+      "zh-Hans": "伴随灼热的引擎声进行冲撞。有时会让目标陷入灼伤状态。",
+      "zh-Hant": "伴隨灼熱的引擎聲進行衝撞。有時會讓目標陷入灼傷狀態。",
+    },
+  ),
+  "bleakwind-storm": ov(
+    { "zh-Hans": "枯叶风暴", "zh-Hant": "枯葉風暴" },
+    {
+      ja: "肌寒い冷たい風で相手を激しく襲う。相手の素早さを下げる。",
+      "zh-Hans": "用冰冷的寒风猛烈袭击对手。会降低对手的速度。",
+      "zh-Hant": "用冰冷的寒風猛烈襲擊對手。會降低對手的速度。",
+    },
+  ),
+  "blood-moon": ov(
+    { "zh-Hans": "血月", "zh-Hant": "血月" },
+    {
+      ja: "満月のような赤い月から放つ全力の一撃。連続では出せない。",
+      "zh-Hans": "从满月般的赤红明月发射出全力一击。无法连续使出。",
+      "zh-Hant": "從滿月般的赤紅明月發射出全力一擊。無法連續使出。",
+    },
+  ),
+  "burning-bulwark": ov(
+    { "zh-Hans": "火焰守护", "zh-Hant": "火焰守護" },
+    {
+      ja: "高熱の体毛で攻撃を防ぎ、触れた相手をやけど状態にする。",
+      "zh-Hans": "用高热的体毛挡住攻击，让接触到自己的对手陷入灼伤状态。",
+      "zh-Hant": "用高熱的體毛擋住攻擊，讓接觸到自己的對手陷入灼傷狀態。",
+    },
+  ),
+  "chloroblast": ov(
+    { "zh-Hans": "叶绿爆震", "zh-Hant": "葉綠爆震" },
+    {
+      ja: "体に集めた葉緑素を放って攻撃する。自分もダメージを受ける。",
+      "zh-Hans": "释放凝聚在体内的叶绿素进行攻击。自己也会受到伤害。",
+      "zh-Hant": "釋放凝聚在體內的葉綠素進行攻擊。自己也會受到傷害。",
+    },
+  ),
+  "collision-course": ov(
+    { "zh-Hans": "全开猛撞", "zh-Hant": "全開猛撞" },
+    {
+      ja: "太古の体当たり。効果ばつぐんのときさらに威力が上がる。",
+      "zh-Hans": "太古的体当冲撞。当效果绝佳时威力会进一步提升。",
+      "zh-Hant": "太古的體當衝撞。當效果絕佳時威力會進一步提升。",
+    },
+  ),
+  "combat-torque": ov(
+    { "zh-Hans": "格斗扭矩", "zh-Hant": "格鬥扭矩" },
+    {
+      ja: "力強くエンジンを唸らせて殴りつける。相手をまひ状態にすることがある。",
+      "zh-Hans": "用强力的引擎轰鸣进行殴打。有时会让目标陷入麻痹状态。",
+      "zh-Hant": "用強力的引擎轟鳴進行毆打。有時會讓目標陷入麻痹狀態。",
+    },
+  ),
+  "doodle": ov(
+    { "zh-Hans": "描绘", "zh-Hant": "描繪" },
+    {
+      ja: "対象の特性を捕えて、自分と味方の特性を同じものに変える。",
+      "zh-Hans": "捕捉对手的特性，将自己和我方的特性变成与之相同。",
+      "zh-Hant": "捕捉對手的特性，將自己和我方的特性變成與之相同。",
+    },
+  ),
+  "double-shock": ov(
+    { "zh-Hans": "全力电击", "zh-Hant": "全力電擊" },
+    {
+      ja: "体内の電気を全て放出して大ダメージを与える。電気タイプではなくなる。",
+      "zh-Hans": "释放体内全部电力造成巨大伤害。自己的电属性会消失。",
+      "zh-Hant": "釋放體內全部電力造成巨大傷害。自己的電屬性會消失。",
+    },
+  ),
+  "electro-drift": ov(
+    { "zh-Hans": "闪电猛冲", "zh-Hant": "閃電猛衝" },
+    {
+      ja: "未来の電撃で貫く。効果ばつぐんのときさらに威力が上がる。",
+      "zh-Hans": "用未来的电击穿透目标。当效果绝佳时威力会进一步提升。",
+      "zh-Hant": "用未來的電擊穿透目標。當效果絕佳時威力會進一步提升。",
+    },
+  ),
+  "esper-wing": ov(
+    { "zh-Hans": "灵魂翅膀", "zh-Hant": "靈魂翅膀" },
+    {
+      ja: "オーラを纏った翼で切り裂く。急所に当たりやすく、自分の素早さも上がる。",
+      "zh-Hans": "用灵气环绕的翅膀切斩对手。容易击中要害，并能提高自己的速度。",
+      "zh-Hant": "用靈氣環繞的翅膀切斬對手。容易擊中要害，並能提高自己的速度。",
+    },
+  ),
+  "fillet-away": ov(
+    { "zh-Hans": "大力瘦身", "zh-Hant": "大力瘦身" },
+    {
+      ja: "自分のHPを削って、攻撃と特攻と素早さを大きく上げる。",
+      "zh-Hans": "消耗自身HP来大幅提高自己的攻击、特攻和速度。",
+      "zh-Hant": "消耗自身HP來大幅提高自己的攻擊、特攻和速度。",
+    },
+  ),
+  "glaive-rush": ov(
+    { "zh-Hans": "巨剑突击", "zh-Hant": "巨劍突擊" },
+    {
+      ja: "獰猛な体当たり。次のターンまで受ける技は必中になり、ダメージも倍になる。",
+      "zh-Hans": "凶猛的飞身冲撞。到下一回合为止，自己受到的招式必定命中且伤害变成２倍。",
+      "zh-Hant": "兇猛的飛身衝撞。到下一回合為止，自己受到的招式必定命中且傷害變成２倍。",
+    },
+  ),
+  "hydro-steam": ov(
+    { "zh-Hans": "水蒸气", "zh-Hant": "水蒸氣" },
+    {
+      ja: "高温の水蒸気を相手に勢いよく吹きつける。晴れている時に威力が上がる。",
+      "zh-Hans": "向对手猛烈喷出高温水蒸气。在晴天时威力会提高。",
+      "zh-Hant": "向對手猛烈噴出高溫水蒸氣。在晴天時威力會提高。",
+    },
+  ),
+  "hyper-drill": ov(
+    { "zh-Hans": "强力钻", "zh-Hant": "強力鑽" },
+    {
+      ja: "体の一部を高速で回転させ、相手の守る技などを無視して攻撃する。",
+      "zh-Hans": "高速旋转身体的某个部位，无视对方的守住等招式进行攻击。",
+      "zh-Hant": "高速旋轉身體的某個部位，無視對方的守住等招式進行攻擊。",
+    },
+  ),
+  "ivy-cudgel": ov(
+    { "zh-Hans": "蔓藤棍", "zh-Hant": "蔓藤棍" },
+    {
+      ja: "ツタを纏った棍棒で殴る。お面によってタイプが変わる。急所に当たりやすい。",
+      "zh-Hans": "用缠绕着蔓藤的棍棒进行殴打。属性会随着面具改变。容易击中要害。",
+      "zh-Hant": "用纏繞著蔓藤的棍棒進行毆打。屬性會隨著面具改變。容易擊中要害。",
+    },
+  ),
+  "lunar-blessing": ov(
+    { "zh-Hans": "月之祈祷", "zh-Hant": "月之祈禱" },
+    {
+      ja: "三日月に祈り、自分と味方のHPを回復して状態異常を治す。",
+      "zh-Hans": "向新月祈祷，回复自己和我方的HP并治愈异常状态。",
+      "zh-Hant": "向新月祈禱，回復自己和我方的HP並治癒異常狀態。",
+    },
+  ),
+  "magical-torque": ov(
+    { "zh-Hans": "妖精扭矩", "zh-Hant": "妖精扭矩" },
+    {
+      ja: "妖しいエンジン音とともに体当たりを浴びせる。相手を混乱状態にすることがある。",
+      "zh-Hans": "伴随妖异的引擎声进行冲撞。有时会让目标陷入混乱状态。",
+      "zh-Hant": "伴隨妖異的引擎聲進行衝撞。有時會讓目標陷入混亂狀態。",
+    },
+  ),
+  "make-it-rain": ov(
+    { "zh-Hans": "淘金潮", "zh-Hant": "淘金潮" },
+    {
+      ja: "大量のコインを投げつけて攻撃する。自分の特攻が下がる。",
+      "zh-Hans": "投出大量金币进行攻击。自己的特攻会降低。",
+      "zh-Hant": "投出大量金幣進行攻擊。自己的特攻會降低。",
+    },
+  ),
+  "malignant-chain": ov(
+    { "zh-Hans": "污泥锁链", "zh-Hant": "污泥鎖鏈" },
+    {
+      ja: "毒の鎖で相手を絡め取って攻撃する。相手をどく状態にすることがある。",
+      "zh-Hans": "用毒锁链缠绕目标进行攻击。有时会让目标陷入中毒状态。",
+      "zh-Hant": "用毒鎖鏈纏繞目標進行攻擊。有時會讓目標陷入中毒狀態。",
+    },
+  ),
+  "mighty-cleave": ov(
+    { "zh-Hans": "豪壮斩裂", "zh-Hant": "豪壯斬裂" },
+    {
+      ja: "頭の上の刃で相手を斬りつける。相手の守る効果を無視する。",
+      "zh-Hans": "用头上的利刃斩击对手。无视对方的守住等效果。",
+      "zh-Hant": "用頭上的利刃斬擊對手。無視對方的守住等效果。",
+    },
+  ),
+  "mystical-power": ov(
+    { "zh-Hans": "神秘之力", "zh-Hant": "神秘之力" },
+    {
+      ja: "不思議な力を放って攻撃する。自分の特攻が上がる。",
+      "zh-Hans": "释放不可思议的力量进行攻击。自己的特攻会提高。",
+      "zh-Hant": "釋放不可思議的力量進行攻擊。自己的特攻會提高。",
+    },
+  ),
+  "noxious-torque": ov(
+    { "zh-Hans": "毒扭矩", "zh-Hant": "毒扭矩" },
+    {
+      ja: "毒気を撒き散らしながら体当たりを浴びせる。相手をどく状態にすることがある。",
+      "zh-Hans": "一边散播毒气一边进行冲撞。有时会让目标陷入中毒状态。",
+      "zh-Hant": "一邊散播毒氣一邊進行衝撞。有時會讓目標陷入中毒狀態。",
+    },
+  ),
+  "order-up": ov(
+    { "zh-Hans": "上菜", "zh-Hant": "上菜" },
+    {
+      ja: "気品ある所作で攻撃する。口の中のシャリタツの姿に応じて自分の能力が上がる。",
+      "zh-Hans": "用优雅的姿态进行攻击。口中含着的米立龙的姿态会决定自己提升的能力。",
+      "zh-Hant": "用優雅的姿態進行攻擊。口中含著的米立龍的姿態會決定自己提升的能力。",
+    },
+  ),
+  "power-shift": ov(
+    { "zh-Hans": "力量转换", "zh-Hant": "力量轉換" },
+    {
+      ja: "自分の攻撃と防御の能力値を入れ替える。",
+      "zh-Hans": "互换自己的攻击与防御的能力值。",
+      "zh-Hant": "互換自己的攻擊與防禦的能力值。",
+    },
+  ),
+  "psyblade": ov(
+    { "zh-Hans": "灵刀", "zh-Hant": "靈刀" },
+    {
+      ja: "霊気を纏った刃で斬りつける。エレキフィールドのときは威力が1.5倍になる。",
+      "zh-Hans": "用裹覆灵气的利刃斩击对手。在电气场地时威力会变成1.5倍。",
+      "zh-Hant": "用裹覆靈氣的利刃斬擊對手。在電氣場地時威力會變成1.5倍。",
+    },
+  ),
+  "rage-fist": ov(
+    { "zh-Hans": "愤怒之拳", "zh-Hant": "憤怒之拳" },
+    {
+      ja: "怒りの力を拳に込めて攻撃する。これまでに技を受けた回数が多いほど威力が上がる。",
+      "zh-Hans": "将愤怒的力量灌注到拳头进行攻击。受到招式攻击的次数越多威力越大。",
+      "zh-Hant": "將憤怒的力量灌注到拳頭進行攻擊。受到招式攻擊的次數越多威力越大。",
+    },
+  ),
+  "revival-blessing": ov(
+    { "zh-Hans": "复生祈愿", "zh-Hant": "復生祈願" },
+    {
+      ja: "祈ることで戦闘不能の味方をHP半分の状態で復活させる。",
+      "zh-Hans": "通过祈祷使陷入濒死的我方宝可梦以一半HP的状态复活。",
+      "zh-Hant": "通過祈禱使陷入瀕死的我方寶可夢以一半HP的狀態復活。",
+    },
+  ),
+  "ruination": ov(
+    { "zh-Hans": "大灾难", "zh-Hant": "大災難" },
+    {
+      ja: "大いなる災いを呼び寄せ、相手のHPを半分にする。",
+      "zh-Hans": "招来巨大的灾厄，使目标的HP减少一半。",
+      "zh-Hant": "招來巨大的災厄，使目標的HP減少一半。",
+    },
+  ),
+  "sandsear-storm": ov(
+    { "zh-Hans": "热沙风暴", "zh-Hant": "熱沙風暴" },
+    {
+      ja: "焼け付く砂で相手を包み込んで攻撃する。相手をやけど状態にすることがある。",
+      "zh-Hans": "用灼热的沙子包裹目标进行攻击。有时会让目标陷入灼伤状态。",
+      "zh-Hant": "用灼熱的沙子包裹目標進行攻擊。有時會讓目標陷入灼傷狀態。",
+    },
+  ),
+  "silk-trap": ov(
+    { "zh-Hans": "线阱", "zh-Hant": "線阱" },
+    {
+      ja: "糸の罠を張る。接触してきた相手の素早さを下げる。連続では出せない。",
+      "zh-Hans": "张开丝线陷阱。接触自己的对手速度会下降。无法连续使出。",
+      "zh-Hant": "張開絲線陷阱。接觸自己的對手速度會下降。無法連續使出。",
+    },
+  ),
+  "spin-out": ov(
+    { "zh-Hans": "疾速转转", "zh-Hant": "疾速轉轉" },
+    {
+      ja: "脚にものすごい負荷をかけて高速回転して攻撃する。自分の素早さが大幅に下がる。",
+      "zh-Hans": "给脚部施加极大负荷，高速旋转进行攻击。自己的速度大幅降低。",
+      "zh-Hant": "給腳部施加極大負荷，高速旋轉進行攻擊。自己的速度大幅降低。",
+    },
+  ),
+  "springtide-storm": ov(
+    { "zh-Hans": "阳春风暴", "zh-Hant": "陽春風暴" },
+    {
+      ja: "愛と憎悪が荒れ狂う風で相手を包み込んで攻撃する。相手の攻撃を下げることがある。",
+      "zh-Hans": "用爱憎交织的狂风将目标卷入进行攻击。有时会降低对手的攻击。",
+      "zh-Hant": "用愛憎交織的狂風將目標捲入進行攻擊。有時會降低對手的攻擊。",
+    },
+  ),
+  "tachyon-cutter": ov(
+    { "zh-Hans": "迅子斩", "zh-Hant": "迅子斬" },
+    {
+      ja: "粒子の刃を２連続で放つ攻撃。必ず命中する。",
+      "zh-Hans": "连续两次释放粒子之刃发动攻击。必定命中。",
+      "zh-Hant": "連續兩次釋放粒子之刃發動攻擊。必定命中。",
+    },
+  ),
+  "take-heart": ov(
+    { "zh-Hans": "鼓起干劲", "zh-Hant": "鼓起幹勁" },
+    {
+      ja: "気合を入れて、自分の状態異常を治す。同時に特攻と特防も上げる。",
+      "zh-Hans": "鼓起干劲，治愈自己的异常状态。同时还能提高自己的特攻和特防。",
+      "zh-Hant": "鼓起幹勁，治癒自己的異常狀態。同時還能提高自己的特攻和特防。",
+    },
+  ),
+  "tera-blast": ov(
+    { "zh-Hans": "太晶爆发", "zh-Hant": "太晶爆發" },
+    {
+      ja: "テラスタル中はテラスタイプの技となり、攻撃と特攻の高い方で計算する。",
+      "zh-Hans": "太晶化时变为太晶属性的招式，使用攻击和特攻中较高的能力进行计算。",
+      "zh-Hant": "太晶化時變為太晶屬性的招式，使用攻擊和特攻中較高的能力進行計算。",
+    },
+  ),
+  "tera-starstorm": ov(
+    { "zh-Hans": "晶光星群", "zh-Hant": "晶光星群" },
+    {
+      ja: "星の力を集めて攻撃する。テラパゴスのステラフォルムで使うと範囲攻撃となる。",
+      "zh-Hans": "聚集星辰之力进行攻击。太乐巴戈斯的星晶形态使用时会变为范围攻击。",
+      "zh-Hant": "聚集星辰之力進行攻擊。太樂巴戈斯的星晶形態使用時會變為範圍攻擊。",
+    },
+  ),
+  "thunderclap": ov(
+    { "zh-Hans": "迅雷", "zh-Hant": "迅雷" },
+    {
+      ja: "相手より先に電撃を見舞う。相手が攻撃技を選んでいた時のみ成功する。",
+      "zh-Hans": "抢先释放电击攻击对手。只有在对手选择攻击招式时才能成功。",
+      "zh-Hant": "搶先釋放電擊攻擊對手。只有在對手選擇攻擊招式時才能成功。",
+    },
+  ),
+  "triple-dive": ov(
+    { "zh-Hans": "三连钻", "zh-Hant": "三連鑽" },
+    {
+      ja: "息のあったしぶきを上げながら３回連続で攻撃する。",
+      "zh-Hans": "溅起整齐的水花，连续３次发动攻击。",
+      "zh-Hant": "濺起整齊的水花，連續３次發動攻擊。",
+    },
+  ),
+  "victory-dance": ov(
+    { "zh-Hans": "胜利之舞", "zh-Hant": "勝利之舞" },
+    {
+      ja: "勝利を呼び寄せる舞を激しく踊って、自分の攻撃と防御と素早さを上げる。",
+      "zh-Hans": "热烈地跳起召唤胜利的舞蹈，提高自己的攻击、防御和速度。",
+      "zh-Hant": "熱烈地跳起召喚勝利的舞蹈，提高自己的攻擊、防禦和速度。",
+    },
+  ),
+  "wicked-torque": ov(
+    { "zh-Hans": "恶扭矩", "zh-Hant": "惡扭矩" },
+    {
+      ja: "邪悪なエンジン音とともに体当たりを浴びせる。相手を眠り状態にすることがある。",
+      "zh-Hans": "伴随邪恶的引擎声进行冲撞。有时会让目标陷入睡眠状态。",
+      "zh-Hant": "伴隨邪惡的引擎聲進行衝撞。有時會讓目標陷入睡眠狀態。",
+    },
+  ),
+  "wildbolt-storm": ov(
+    { "zh-Hans": "雷鸣风暴", "zh-Hant": "雷鳴風暴" },
+    {
+      ja: "稲妻と暴風で激しく相手を襲う。相手をまひ状態にすることがある。",
+      "zh-Hans": "用电闪雷鸣的狂风猛烈袭击目标。有时会让目标陷入麻痹状态。",
+      "zh-Hant": "用電閃雷鳴的狂風猛烈襲擊目標。有時會讓目標陷入麻痺狀態。",
+    },
+  ),
+
+  // ─── Z-Moves (Sun/Moon era, not in Champions but kept in DB) ──────────────
+  ...((): Record<string, MoveOverride> => {
+    const Z_DESC = {
+      en: "Z-Move from Pokémon Sun/Moon. Used once per battle with the appropriate Z-Crystal; power is derived from the base move it upgrades.",
+      ja: "ポケモンサン・ムーンのＺワザ。対応するＺクリスタルを持たせると１回だけ使用可能で、威力は元の技に依存する。",
+      "zh-Hans": "宝可梦太阳/月亮中的Z招式。携带对应的Z纯晶后每场战斗可使出一次，威力来自被升级的原招式。",
+      "zh-Hant": "寶可夢太陽/月亮中的Z招式。攜帶對應的Z純晶後每場戰鬥可使出一次，威力來自被升級的原招式。",
+    };
+    return {
+      "acid-downpour--special":         ov({ "zh-Hans": "强酸暴雨",       "zh-Hant": "強酸暴雨" }, Z_DESC),
+      "all-out-pummeling--special":     ov({ "zh-Hans": "全力无双激郁拳", "zh-Hant": "全力無雙激鬱拳" }, Z_DESC),
+      "black-hole-eclipse--special":    ov({ "zh-Hans": "黑洞强吸入",     "zh-Hant": "黑洞強吸入" }, Z_DESC),
+      "bloom-doom--special":            ov({ "zh-Hans": "绚丽花朵大冲撞", "zh-Hant": "絢麗花朵大衝撞" }, Z_DESC),
+      "breakneck-blitz--special":       ov({ "zh-Hans": "极速飞冲击",     "zh-Hant": "極速飛衝擊" }, Z_DESC),
+      "continental-crush--special":     ov({ "zh-Hans": "超绝大陆粉碎击", "zh-Hant": "超絕大陸粉碎擊" }, Z_DESC),
+      "corkscrew-crash--special":       ov({ "zh-Hans": "钢铁螺旋大冲撞", "zh-Hant": "鋼鐵螺旋大衝撞" }, Z_DESC),
+      "devastating-drake--special":     ov({ "zh-Hans": "毁天灭地巨龙震", "zh-Hant": "毀天滅地巨龍震" }, Z_DESC),
+      "gigavolt-havoc--special":        ov({ "zh-Hans": "终极伏特狂雷闪", "zh-Hant": "終極伏特狂雷閃" }, Z_DESC),
+      "hydro-vortex--special":          ov({ "zh-Hans": "超级水流大漩涡", "zh-Hant": "超級水流大漩渦" }, Z_DESC),
+      "inferno-overdrive--special":     ov({ "zh-Hans": "超强极限爆焰弹", "zh-Hant": "超強極限爆焰彈" }, Z_DESC),
+      "never-ending-nightmare--special":ov({ "zh-Hans": "无尽暗夜之诱惑", "zh-Hant": "無盡暗夜之誘惑" }, Z_DESC),
+      "savage-spin-out--special":       ov({ "zh-Hans": "极恶捕食蛛网阵", "zh-Hant": "極惡捕食蛛網陣" }, Z_DESC),
+      "shattered-psyche--special":      ov({ "zh-Hans": "精神崩裂",       "zh-Hant": "精神崩裂" }, Z_DESC),
+      "subzero-slammer--special":       ov({ "zh-Hans": "绝对零度大冰封", "zh-Hant": "絕對零度大冰封" }, Z_DESC),
+      "supersonic-skystrike--special":  ov({ "zh-Hans": "超音速俯冲轰烈撞", "zh-Hant": "超音速俯衝轟烈撞" }, Z_DESC),
+      "tectonic-rage--special":         ov({ "zh-Hans": "地隆啸天大终结", "zh-Hant": "地隆嘯天大終結" }, Z_DESC),
+      "twinkle-tackle--special":        ov({ "zh-Hans": "可爱星星飞冲撞", "zh-Hant": "可愛星星飛衝撞" }, Z_DESC),
+    };
+  })(),
+
+  // ─── Shadow moves (XD: Gale of Darkness, not in Champions) ────────────────
+  ...((): Record<string, MoveOverride> => {
+    const S_DESC = {
+      en: "Shadow move used by Shadow Pokémon in Pokémon XD: Gale of Darkness. Hits Pokémon of any type for neutral damage; not present in mainline competitive play.",
+      ja: "『ポケモンＸＤ闇の旋風ダーク・ルギア』のダークポケモンが使うダーク技。どのタイプにも等倍で命中するが、本編の競技対戦では使用できない。",
+      "zh-Hans": "《宝可梦XD：暗之旋风达克莱伊》中暗黑宝可梦使用的暗影招式。对任何属性都造成普通伤害，不在主系列竞技对战中出现。",
+      "zh-Hant": "《寶可夢XD：闇之旋風達克萊伊》中暗黑寶可夢使用的暗影招式。對任何屬性都造成普通傷害，不在主系列競技對戰中出現。",
+    };
+    return {
+      "shadow-blast":  ov({ "zh-Hans": "暗影爆破", "zh-Hant": "暗影爆破" }, S_DESC),
+      "shadow-blitz":  ov({ "zh-Hans": "暗影冲撞", "zh-Hant": "暗影衝撞" }, S_DESC),
+      "shadow-bolt":   ov({ "zh-Hans": "暗影霹雳", "zh-Hant": "暗影霹靂" }, S_DESC),
+      "shadow-break":  ov({ "zh-Hans": "暗影破",   "zh-Hant": "暗影破" }, S_DESC),
+      "shadow-chill":  ov({ "zh-Hans": "暗影寒冰", "zh-Hant": "暗影寒冰" }, S_DESC),
+      "shadow-down":   ov({ "zh-Hans": "暗影压制", "zh-Hant": "暗影壓制" }, S_DESC),
+      "shadow-end":    ov({ "zh-Hans": "暗影终结", "zh-Hant": "暗影終結" }, S_DESC),
+      "shadow-fire":   ov({ "zh-Hans": "暗影烈焰", "zh-Hant": "暗影烈焰" }, S_DESC),
+      "shadow-half":   ov({ "zh-Hans": "暗影分割", "zh-Hant": "暗影分割" }, S_DESC),
+      "shadow-hold":   ov({ "zh-Hans": "暗影束缚", "zh-Hant": "暗影束縛" }, S_DESC),
+      "shadow-mist":   ov({ "zh-Hans": "暗影迷雾", "zh-Hant": "暗影迷霧" }, S_DESC),
+      "shadow-panic":  ov({ "zh-Hans": "暗影恐慌", "zh-Hant": "暗影恐慌" }, S_DESC),
+      "shadow-rave":   ov({ "zh-Hans": "暗影狂奔", "zh-Hant": "暗影狂奔" }, S_DESC),
+      "shadow-rush":   ov({ "zh-Hans": "暗影突袭", "zh-Hant": "暗影突襲" }, S_DESC),
+      "shadow-shed":   ov({ "zh-Hans": "暗影脱离", "zh-Hant": "暗影脫離" }, S_DESC),
+      "shadow-sky":    ov({ "zh-Hans": "暗影天空", "zh-Hant": "暗影天空" }, S_DESC),
+      "shadow-storm":  ov({ "zh-Hans": "暗影风暴", "zh-Hant": "暗影風暴" }, S_DESC),
+      "shadow-wave":   ov({ "zh-Hans": "暗影波动", "zh-Hant": "暗影波動" }, S_DESC),
+    };
+  })(),
 };

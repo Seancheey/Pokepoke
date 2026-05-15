@@ -182,6 +182,27 @@ function mergeI18n(
   return out;
 }
 
+// Same as mergeI18n but the override wins outright when set — used for names,
+// where PokeAPI sometimes ships wrong-script text in the zh-Hant slot for Gen
+// 9 moves (e.g. "晶光转转" — simplified chars in the traditional column). The
+// hand-curated override is treated as authoritative.
+function forceI18n(
+  base: Record<Locale, string> | undefined,
+  override: Partial<Record<Locale, string>> | undefined,
+): Record<Locale, string> {
+  const out = {
+    en: base?.en || "",
+    ja: base?.ja || "",
+    "zh-Hans": base?.["zh-Hans"] || "",
+    "zh-Hant": base?.["zh-Hant"] || "",
+  };
+  if (!override) return out;
+  for (const loc of ["en", "ja", "zh-Hans", "zh-Hant"] as Locale[]) {
+    if (override[loc]) out[loc] = override[loc]!;
+  }
+  return out;
+}
+
 // ─── Smogon usage stats overlay ──────────────────────────────────────────────
 
 // Pokémon Champions VGC Regulation M-A — the actual competitive format for
@@ -773,7 +794,7 @@ async function main() {
       moveEffectById.get(num(m.effect_id))?.en ?? "",
       m.effect_chance,
     );
-    const mergedName = mergeI18n(namesMap, override?.name);
+    const mergedName = forceI18n(namesMap, override?.name);
     const shortI18n = mergeI18n(flavor, override?.short);
     const longI18n = mergeI18n(
       { en: proseEn || effectEn, ja: flavor?.ja ?? "", "zh-Hans": flavor?.["zh-Hans"] ?? "", "zh-Hant": flavor?.["zh-Hant"] ?? "" },
@@ -919,7 +940,7 @@ async function main() {
     const enName = namesMap?.en ?? it.identifier;
     const shortDescEn = prose?.short || flavor?.en || "";
     const longDescEn = prose?.long || prose?.short || flavor?.en || "";
-    const mergedName = mergeI18n(namesMap, override?.name);
+    const mergedName = forceI18n(namesMap, override?.name);
     const shortI18n = mergeI18n({
       en: shortDescEn, ja: flavor?.ja ?? "", "zh-Hans": flavor?.["zh-Hans"] ?? "", "zh-Hant": flavor?.["zh-Hant"] ?? "",
     }, override?.short);
