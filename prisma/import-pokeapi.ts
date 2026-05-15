@@ -92,6 +92,27 @@ function buildNameI18n<T extends Record<string, string>>(
   return out;
 }
 
+// Detect placeholder flavor text that PokeAPI ships when a move/ability/item
+// was dropped from a later game. PokeAPI keeps a row but uses fixed dummy text
+// ("This move can't be used.", ダミーデータ, etc). Picking the highest vg would
+// land on these placeholders for ~16% of moves — skip them so the algorithm
+// falls back to the last real flavor available.
+const PLACEHOLDER_PATTERNS: RegExp[] = [
+  /^this move can[’']t be used/i,
+  /^this move cannot be used/i,
+  /^cannot be used/i,
+  /^ダミーデータ/,
+  /^この技は\s*使えません/,
+  /^このわざは\s*つかえません/,
+  /^无法使用这个招式/,
+  /^無法使用此招式/,
+  /^무효한\s*기술/,
+  /^cette capacité ne peut pas être utilisée/i,
+];
+function isPlaceholderFlavor(text: string): boolean {
+  return PLACEHOLDER_PATTERNS.some((re) => re.test(text));
+}
+
 // Latest flavor text per (entity, locale). `entityIdField`: column name pointing at entity.
 function buildFlavorI18n<T extends Record<string, string>>(
   rows: T[],
@@ -108,6 +129,7 @@ function buildFlavorI18n<T extends Record<string, string>>(
     const vg = num(r.version_group_id);
     const text = (r[textField] ?? "").replace(/[\n\r­​]+/g, " ").trim();
     if (!eid || !lid || !text) continue;
+    if (isPlaceholderFlavor(text)) continue;
     const key = `${eid}|${lid}`;
     const prev = best.get(key);
     if (!prev || vg > prev.vg) best.set(key, { vg, text });
