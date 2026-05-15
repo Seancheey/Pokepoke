@@ -47,7 +47,7 @@ export default async function MovesListPage({
   const sort = (get("sort") as Sort) ?? "usage";
   const dir = get("dir") === "asc" ? "asc" : "desc";
 
-  const where: Record<string, unknown> = { usagePct: { gt: 0 } };
+  const where: Record<string, unknown> = {};
   if (q) {
     where.OR = [
       { name: { contains: q, mode: "insensitive" } },
