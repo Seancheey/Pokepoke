@@ -225,7 +225,7 @@ export const MOVE_OVERRIDES: Record<string, MoveOverride> = {
     },
   ),
   "mortal-spin": ov(
-    { "zh-Hans": "扫尾拍弹", "zh-Hant": "掃尾拍彈" },
+    { "zh-Hans": "晶光转转", "zh-Hant": "晶光轉轉" },
     {
       ja: "回転して攻撃し、しめつける技ややどりぎのタネなどを取り除く。相手を毒にする。",
       "zh-Hans": "旋转攻击并解除绑紧、寄生种子等效果。还会使对方宝可梦中毒。",
