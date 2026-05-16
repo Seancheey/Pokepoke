@@ -445,6 +445,7 @@ function SlotBody({
 }) {
   const t = useTranslations("TeamBuilder");
   const tStat = useTranslations("TeamBuilder.evStat");
+  const tNature = useTranslations("Natures");
 
   // Per-slot usage lookups (top moves/abilities/items/spreads with %)
   const pctByMove = new Map(p.usage?.topMoves.map((m) => [m.slug, m.pct]) ?? []);
@@ -489,9 +490,15 @@ function SlotBody({
   const presetMatch = spreadPresets.find((s) => s.vp.join("-") === currentSpreadKey);
   const spreadOptions: ComboboxOption[] = spreadPresets.map((s) => {
     const key = `${s.nature}:${s.vp.join("/")}`;
+    let natureLabel = s.nature;
+    try {
+      natureLabel = tNature(s.nature as never);
+    } catch {
+      // fall back to raw English if the nature isn't in the translation table
+    }
     return {
       value: key,
-      label: `${s.nature} ${s.vp.join("/")}`,
+      label: `${natureLabel} ${s.vp.join("/")}`,
       usagePct: s.pct,
     };
   });
