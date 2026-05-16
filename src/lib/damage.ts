@@ -160,6 +160,69 @@ const ALWAYS_CRIT_MOVES = new Set([
   "zippy-zap",
 ]);
 
+// Multi-hit move effective-power multipliers. Damage is computed once at the
+// listed per-hit power and then multiplied — matching the standard damage-calc
+// convention of "assume every hit lands". Variable-hit moves use expected
+// hits from the canonical Gen 5+ distribution; Skill Link / Loaded Dice
+// overrides are applied at call-site inside calc().
+type MultiHitKind = "fixed" | "twoToFive" | "tenStop";
+const MULTI_HIT_MOVES: Record<string, { kind: MultiHitKind; hits: number }> = {
+  // Always 2 hits (multiplier 2)
+  "double-hit":       { kind: "fixed", hits: 2 },
+  "double-kick":      { kind: "fixed", hits: 2 },
+  "bonemerang":       { kind: "fixed", hits: 2 },
+  "gear-grind":       { kind: "fixed", hits: 2 },
+  "dual-chop":        { kind: "fixed", hits: 2 },
+  "dual-wingbeat":    { kind: "fixed", hits: 2 },
+  "dragon-darts":     { kind: "fixed", hits: 2 },
+  "twin-beam":        { kind: "fixed", hits: 2 },
+  "tachyon-cutter":   { kind: "fixed", hits: 2 },
+  "double-iron-bash": { kind: "fixed", hits: 2 },
+  // Always 3 hits
+  "surging-strikes":  { kind: "fixed", hits: 3 },
+  "triple-dive":      { kind: "fixed", hits: 3 },
+  "water-shuriken":   { kind: "fixed", hits: 3 },
+  // Increasing-power 3-hit moves: per-hit BP = base × (1, 2, 3) → effective ×6
+  "triple-axel":      { kind: "fixed", hits: 6 }, // 三旋击 — 20 + 40 + 60 = 120
+  "triple-kick":      { kind: "fixed", hits: 6 }, // 10 + 20 + 30 = 60
+  // 2-5 hit distribution. Expected hits without Skill Link:
+  // 35% × 2 + 35% × 3 + 15% × 4 + 15% × 5 = 3.1
+  "bullet-seed":      { kind: "twoToFive", hits: 0 },
+  "icicle-spear":     { kind: "twoToFive", hits: 0 },
+  "pin-missile":      { kind: "twoToFive", hits: 0 },
+  "rock-blast":       { kind: "twoToFive", hits: 0 },
+  "bone-rush":        { kind: "twoToFive", hits: 0 },
+  "scale-shot":       { kind: "twoToFive", hits: 0 },
+  "tail-slap":        { kind: "twoToFive", hits: 0 },
+  "fury-attack":      { kind: "twoToFive", hits: 0 },
+  "arm-thrust":       { kind: "twoToFive", hits: 0 },
+  "fury-swipes":      { kind: "twoToFive", hits: 0 },
+  "spike-cannon":     { kind: "twoToFive", hits: 0 },
+  "barrage":          { kind: "twoToFive", hits: 0 },
+  "comet-punch":      { kind: "twoToFive", hits: 0 },
+  "double-slap":      { kind: "twoToFive", hits: 0 },
+  // 1-10 hits, 90% per-hit accuracy — Population Bomb.
+  // Expected hits = Σ(k × P(k)) with stop-on-miss semantics ≈ 6.51.
+  "population-bomb":  { kind: "tenStop", hits: 0 },
+};
+
+function multiHitMultiplier(slug: string, ability?: string, item?: string): number | null {
+  const m = MULTI_HIT_MOVES[slug];
+  if (!m) return null;
+  if (m.kind === "fixed") return m.hits;
+  const skillLink = ability === "skill-link";
+  const loadedDice = item === "loaded-dice";
+  if (m.kind === "twoToFive") {
+    if (skillLink) return 5;
+    if (loadedDice) return 4.5; // always 4-5
+    return 3.1;
+  }
+  // tenStop: Population Bomb-style with 90% per-hit accuracy.
+  if (skillLink) return 10;
+  if (loadedDice) return 8.5; // always 4-10, biased high; pick 8.5 as the practical average
+  return 6.51;
+}
+
 function isContact(slug: string): boolean { return CONTACT_MOVES.has(slug); }
 function isPunch(slug: string): boolean { return PUNCH_MOVES.has(slug); }
 function isBite(slug: string): boolean { return BITE_MOVES.has(slug); }
@@ -525,6 +588,16 @@ export function calc(input: CalcInput): CalcOutput | null {
   // Burn — halves physical (Guts ignores; Facade unaffected — not modeled)
   if (isPhysical && a.status === "burn" && a.ability !== "guts") {
     dmg = Math.floor(dmg * 0.5); notes.push("Burn ×0.5");
+  }
+
+  // ── Multi-hit moves ──────────────────────────────────────────────────────
+  // Apply the move's effective hit count (Triple Axel 1+2+3 = 6×, fixed-hit
+  // multi-attacks, and probability-weighted hits for 2-5 / 1-10 moves with
+  // Skill Link / Loaded Dice overrides).
+  const multiHit = multiHitMultiplier(move.slug, a.ability, a.item);
+  if (multiHit !== null) {
+    dmg = Math.floor(dmg * multiHit);
+    notes.push(`Multi-hit ×${multiHit % 1 === 0 ? multiHit : multiHit.toFixed(2)} (${move.slug})`);
   }
 
   // ── 16-roll variance ─────────────────────────────────────────────────────
