@@ -11,6 +11,7 @@ export async function Nav() {
     { href: "/pokemon-champions/abilities", label: t("abilities") },
     { href: "/pokemon-champions/items", label: t("items") },
     { href: "/pokemon-champions/team-builder", label: t("teamBuilder") },
+    { href: "/pokemon-champions/pokemon-builder", label: t("pokemonBuilder") },
     { href: "/pokemon-champions/damage-calc", label: t("damageCalc") },
   ];
 
