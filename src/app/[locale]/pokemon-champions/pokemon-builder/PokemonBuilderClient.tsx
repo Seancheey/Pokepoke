@@ -309,6 +309,8 @@ function ConfigPanel({
 }) {
   const t = useTranslations("PokemonBuilder");
   const tStat = useTranslations("TeamBuilder.evStat");
+  const tStatShort = useTranslations("StatShort");
+  const tNature = useTranslations("Natures");
 
   const validAbilities = useMemo(() => {
     const arr = [...p.abilities];
@@ -357,11 +359,13 @@ function ConfigPanel({
   const ev = build.ev;
   const totalEv = ev.reduce((a, b) => a + b, 0);
   const remaining = MAX_EV_TOTAL - totalEv;
-  const natureFx = natureEffect(build.nature);
   const natureOptions: ComboboxOption[] = NATURES.map((n) => {
-    const fx = natureEffect(n);
-    const annot = fx.up && fx.down ? ` (+${fx.up} / −${fx.down})` : "";
-    return { value: n, label: `${n}${annot}`, searchText: n };
+    const { up, down } = natureEffect(n);
+    const localized = tNature(n as never);
+    const annot = up && down
+      ? ` +${tStatShort(up)} −${tStatShort(down)}`
+      : ` ${tNature("neutralSuffix")}`;
+    return { value: n, label: localized + annot, searchText: n };
   });
 
   return (
