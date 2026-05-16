@@ -822,6 +822,15 @@ function DefenseMatrixCard({
 }) {
   const t = useTranslations("PokemonBuilder");
 
+  // My damaging moves — used for the "Can you OHKO before they hit?" column.
+  const myDamagingMoves = useMemo(
+    () => build.moves
+      .map((s) => moveBySlug.get(s))
+      .filter((m): m is BuilderRefMove => !!m && m.category !== "status" && (m.power ?? 0) > 0),
+    [build.moves, moveBySlug],
+  );
+  const mySpeed = useMemo(() => speedFromBuild(p, build), [p, build]);
+
   // For each top target, gather their top 4 damaging moves
   const targetThreats = useMemo(() => {
     return targets.map((tp) => {
@@ -844,6 +853,7 @@ function DefenseMatrixCard({
               <th className="sticky left-0 z-10 bg-white px-2 py-1.5 text-left dark:bg-zinc-900">
                 {t("attacker")}
               </th>
+              <th className="px-2 py-1.5 text-left whitespace-nowrap">{t("matchupOutcome")}</th>
               <th className="px-2 py-1.5 text-left">{t("threats")}</th>
             </tr>
           </thead>
@@ -855,6 +865,15 @@ function DefenseMatrixCard({
                     <Image src={tt.p.spriteUrl} alt="" width={22} height={22} unoptimized />
                     <span className="font-medium">{tt.p.name}</span>
                   </span>
+                </td>
+                <td className="px-2 py-1.5">
+                  <OutcomeBadge
+                    p={p}
+                    build={build}
+                    target={tt.p}
+                    myDamagingMoves={myDamagingMoves}
+                    mySpeed={mySpeed}
+                  />
                 </td>
                 <td className="px-2 py-1.5">
                   <div className="flex flex-wrap gap-1.5">
@@ -877,6 +896,99 @@ function DefenseMatrixCard({
         </table>
       </div>
     </Card>
+  );
+}
+
+function OutcomeBadge({
+  p,
+  build,
+  target,
+  myDamagingMoves,
+  mySpeed,
+}: {
+  p: BuilderRefPokemon;
+  build: Build;
+  target: BuilderRefPokemon;
+  myDamagingMoves: BuilderRefMove[];
+  mySpeed: number;
+}) {
+  const t = useTranslations("PokemonBuilder");
+  const targetBuild = defenderDefaultBuild(target);
+  const theirSpeed = speedFromBuild(target, targetBuild);
+
+  // Best of my damaging moves against this target → highest OHKO%.
+  const best = useMemo(() => {
+    let bestOhko = 0;
+    let bestMaxPct = 0;
+    let bestMove: BuilderRefMove | null = null;
+    for (const m of myDamagingMoves) {
+      const r = runCalc(p, build, target, targetBuild, m);
+      if (!r) continue;
+      if (r.ohkoPct > bestOhko || (r.ohkoPct === bestOhko && r.maxPct > bestMaxPct)) {
+        bestOhko = r.ohkoPct;
+        bestMaxPct = r.maxPct;
+        bestMove = m;
+      }
+    }
+    return { ohkoPct: bestOhko, maxPct: bestMaxPct, move: bestMove };
+  }, [p, build, target, targetBuild, myDamagingMoves]);
+
+  const faster = mySpeed > theirSpeed;
+  const tied = mySpeed === theirSpeed;
+  const ohkoFull = best.ohkoPct >= 100;
+  const ohkoPartial = best.ohkoPct > 0;
+
+  let label: string;
+  let tone: string;
+  if (faster && ohkoFull) {
+    label = t("outcomeWin");
+    tone = "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900";
+  } else if (faster && ohkoPartial) {
+    label = `${t("outcomeMaybeOhko")} ${best.ohkoPct.toFixed(0)}%`;
+    tone = "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300";
+  } else if (faster) {
+    label = t("outcomeFasterNoKo");
+    tone = "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300";
+  } else if (tied && ohkoFull) {
+    label = t("outcomeSpeedTieKo");
+    tone = "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300";
+  } else if (tied) {
+    label = t("outcomeSpeedTie");
+    tone = "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300";
+  } else if (ohkoFull) {
+    // They outspeed AND we can OHKO them — only matters if we survive their hit
+    label = `${t("outcomeSlowerKo")} ${best.ohkoPct.toFixed(0)}%`;
+    tone = "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300";
+  } else if (ohkoPartial) {
+    label = `${t("outcomeSlowerMaybe")} ${best.ohkoPct.toFixed(0)}%`;
+    tone = "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300";
+  } else {
+    label = t("outcomeLose");
+    tone = "bg-rose-100 text-rose-800 ring-1 ring-rose-300 dark:bg-rose-950/50 dark:text-rose-200 dark:ring-rose-900";
+  }
+
+  const speedArrow = faster ? "▲" : tied ? "=" : "▼";
+  const speedTone = faster ? "text-emerald-600" : tied ? "text-zinc-500" : "text-rose-600";
+  const tooltip = `${t("yourSpeed")} ${mySpeed} ${speedArrow} ${theirSpeed}${best.move ? ` · ${best.move.name} ${best.maxPct.toFixed(0)}% max` : ""}`;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex flex-col items-start gap-0.5 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap",
+        tone,
+      )}
+      title={tooltip}
+    >
+      <span className="inline-flex items-center gap-1">
+        <span className={cn("font-mono tabular-nums", speedTone)}>{speedArrow}</span>
+        {label}
+      </span>
+      {best.move ? (
+        <span className="font-mono tabular-nums text-[10px] opacity-80">
+          {best.move.name} · {best.maxPct.toFixed(0)}%
+        </span>
+      ) : null}
+    </span>
   );
 }
 
@@ -1075,6 +1187,14 @@ function Empty({ children }: { children: React.ReactNode }) {
 function stageMult(s: number): number {
   if (s >= 0) return (2 + s) / 2;
   return 2 / (2 - s);
+}
+
+function speedFromBuild(p: BuilderRefPokemon, build: Build): number {
+  let s = computeStat(p.spe, build.ev[5], build.nature, "spe", false);
+  s = Math.floor(s * stageMult(build.stages.spe));
+  if (build.item === "choice-scarf") s = Math.floor(s * 1.5);
+  if (build.item === "iron-ball") s = Math.floor(s * 0.5);
+  return s;
 }
 
 function attackerDefaultBuild(p: BuilderRefPokemon): Build {

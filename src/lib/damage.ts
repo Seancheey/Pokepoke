@@ -150,6 +150,15 @@ const RECOIL_MOVES = new Set([
   "double-edge", "flare-blitz", "wild-charge", "head-charge", "head-smash",
   "submission", "take-down", "wood-hammer", "volt-tackle",
 ]);
+// Moves that always land a critical hit (1.5× damage built in).
+const ALWAYS_CRIT_MOVES = new Set([
+  "flower-trick",     // 千变万花 — Hisuian Lilligant signature
+  "surging-strikes",  // Urshifu-Rapid-Strike signature
+  "wicked-blow",      // Urshifu-Single-Strike signature
+  "frost-breath",
+  "storm-throw",
+  "zippy-zap",
+]);
 
 function isContact(slug: string): boolean { return CONTACT_MOVES.has(slug); }
 function isPunch(slug: string): boolean { return PUNCH_MOVES.has(slug); }
@@ -251,8 +260,14 @@ function hazardChipPct(defender: CalcInput["defender"], hazards: Hazards): numbe
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 export function calc(input: CalcInput): CalcOutput | null {
-  const { attacker: a, defender: d, move, field } = input;
+  const { attacker: a, defender: d, move } = input;
   if (move.power <= 0) return null;
+
+  // Some moves are scripted to always crit. Auto-set field.crit so the 1.5×
+  // gets baked in everywhere — UI doesn't have to remember to toggle it.
+  const field = ALWAYS_CRIT_MOVES.has(move.slug)
+    ? { ...input.field, crit: true }
+    : input.field;
 
   const notes: string[] = [];
   const isPhysical = move.category === "physical";
