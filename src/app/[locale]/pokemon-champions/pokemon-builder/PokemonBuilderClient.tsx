@@ -871,6 +871,7 @@ function DefenseMatrixCard({
                     p={p}
                     build={build}
                     target={tt.p}
+                    targetMoves={tt.moves}
                     myDamagingMoves={myDamagingMoves}
                     mySpeed={mySpeed}
                   />
@@ -903,12 +904,14 @@ function OutcomeBadge({
   p,
   build,
   target,
+  targetMoves,
   myDamagingMoves,
   mySpeed,
 }: {
   p: BuilderRefPokemon;
   build: Build;
   target: BuilderRefPokemon;
+  targetMoves: BuilderRefMove[];
   myDamagingMoves: BuilderRefMove[];
   mySpeed: number;
 }) {
@@ -917,7 +920,7 @@ function OutcomeBadge({
   const theirSpeed = speedFromBuild(target, targetBuild);
 
   // Best of my damaging moves against this target → highest OHKO%.
-  const best = useMemo(() => {
+  const myBest = useMemo(() => {
     let bestOhko = 0;
     let bestMaxPct = 0;
     let bestMove: BuilderRefMove | null = null;
@@ -933,43 +936,80 @@ function OutcomeBadge({
     return { ohkoPct: bestOhko, maxPct: bestMaxPct, move: bestMove };
   }, [p, build, target, targetBuild, myDamagingMoves]);
 
+  // Best of the target's threats against me → highest OHKO% from them.
+  const theirBest = useMemo(() => {
+    let bestOhko = 0;
+    let bestMaxPct = 0;
+    let bestMove: BuilderRefMove | null = null;
+    for (const m of targetMoves) {
+      const r = runCalc(target, targetBuild, p, build, m);
+      if (!r) continue;
+      if (r.ohkoPct > bestOhko || (r.ohkoPct === bestOhko && r.maxPct > bestMaxPct)) {
+        bestOhko = r.ohkoPct;
+        bestMaxPct = r.maxPct;
+        bestMove = m;
+      }
+    }
+    return { ohkoPct: bestOhko, maxPct: bestMaxPct, move: bestMove };
+  }, [target, targetBuild, p, build, targetMoves]);
+
   const faster = mySpeed > theirSpeed;
   const tied = mySpeed === theirSpeed;
-  const ohkoFull = best.ohkoPct >= 100;
-  const ohkoPartial = best.ohkoPct > 0;
+  const youOhko = myBest.ohkoPct >= 100;
+  const theyOhko = theirBest.ohkoPct >= 100;
 
-  let label: string;
+  // Outcome state machine — answers "who dies first?" using speed +
+  // both directions' OHKO ability.
+  //   • You faster + you OHKO        → outright Win
+  //   • You faster + you don't OHKO + they OHKO back → Trade-and-die (LOSE)
+  //   • You faster + neither OHKO    → continued fight, you go first
+  //   • Speed tie                    → 50/50 race; show + your best
+  //   • They faster + they OHKO      → Lose (you don't act)
+  //   • They faster + they don't OHKO + you OHKO → Revenge (WIN)
+  //   • They faster + neither OHKO   → continued fight, they go first
+  let labelKey: string;
   let tone: string;
-  if (faster && ohkoFull) {
-    label = t("outcomeWin");
+  if (faster && youOhko) {
+    labelKey = "outcomeWin";
     tone = "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900";
-  } else if (faster && ohkoPartial) {
-    label = `${t("outcomeMaybeOhko")} ${best.ohkoPct.toFixed(0)}%`;
-    tone = "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300";
+  } else if (faster && !youOhko && theyOhko) {
+    labelKey = "outcomeFasterTraded";
+    tone = "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300";
   } else if (faster) {
-    label = t("outcomeFasterNoKo");
+    labelKey = "outcomeFasterSafe";
     tone = "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300";
-  } else if (tied && ohkoFull) {
-    label = t("outcomeSpeedTieKo");
+  } else if (tied && youOhko && !theyOhko) {
+    labelKey = "outcomeSpeedTieWin";
+    tone = "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300";
+  } else if (tied && theyOhko && !youOhko) {
+    labelKey = "outcomeSpeedTieLose";
+    tone = "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300";
+  } else if (tied && youOhko && theyOhko) {
+    labelKey = "outcomeSpeedTieFlip";
     tone = "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300";
   } else if (tied) {
-    label = t("outcomeSpeedTie");
+    labelKey = "outcomeSpeedTie";
     tone = "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300";
-  } else if (ohkoFull) {
-    // They outspeed AND we can OHKO them — only matters if we survive their hit
-    label = `${t("outcomeSlowerKo")} ${best.ohkoPct.toFixed(0)}%`;
-    tone = "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300";
-  } else if (ohkoPartial) {
-    label = `${t("outcomeSlowerMaybe")} ${best.ohkoPct.toFixed(0)}%`;
-    tone = "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300";
-  } else {
-    label = t("outcomeLose");
+  } else if (theyOhko) {
+    // Slower + opponent OHKOs you → you never act
+    labelKey = "outcomeLose";
     tone = "bg-rose-100 text-rose-800 ring-1 ring-rose-300 dark:bg-rose-950/50 dark:text-rose-200 dark:ring-rose-900";
+  } else if (youOhko) {
+    // Slower + you survive their hit + you OHKO back
+    labelKey = "outcomeSlowerRevenge";
+    tone = "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300";
+  } else {
+    labelKey = "outcomeSlowerStall";
+    tone = "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300";
   }
+  const label = t(labelKey as never);
 
   const speedArrow = faster ? "▲" : tied ? "=" : "▼";
   const speedTone = faster ? "text-emerald-600" : tied ? "text-zinc-500" : "text-rose-600";
-  const tooltip = `${t("yourSpeed")} ${mySpeed} ${speedArrow} ${theirSpeed}${best.move ? ` · ${best.move.name} ${best.maxPct.toFixed(0)}% max` : ""}`;
+  // Subline: show your best damaging move + their best threat. Two short lines.
+  const tooltip = `${t("yourSpeed")} ${mySpeed} ${speedArrow} ${theirSpeed}` +
+    (myBest.move ? ` · you: ${myBest.move.name} ${myBest.maxPct.toFixed(0)}%` : "") +
+    (theirBest.move ? ` · they: ${theirBest.move.name} ${theirBest.maxPct.toFixed(0)}%` : "");
 
   return (
     <span
@@ -983,11 +1023,11 @@ function OutcomeBadge({
         <span className={cn("font-mono tabular-nums", speedTone)}>{speedArrow}</span>
         {label}
       </span>
-      {best.move ? (
-        <span className="font-mono tabular-nums text-[10px] opacity-80">
-          {best.move.name} · {best.maxPct.toFixed(0)}%
-        </span>
-      ) : null}
+      <span className="font-mono tabular-nums text-[10px] opacity-80">
+        {myBest.move ? `→ ${myBest.maxPct.toFixed(0)}%` : "→ —"}
+        {" · "}
+        {theirBest.move ? `← ${theirBest.maxPct.toFixed(0)}%` : "← —"}
+      </span>
     </span>
   );
 }
