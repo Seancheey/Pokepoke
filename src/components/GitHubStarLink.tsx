@@ -1,15 +1,16 @@
 /**
- * "Star me on GitHub" CTA, lives in the Nav title bar.
- *
- * Server-rendered — pure anchor + inline SVG. Opens the repo in a new tab.
- * The hover state nudges the star fill to amber to reinforce the action.
+ * "Star me on GitHub" CTA, lives in the Nav title bar (and inside the mobile
+ * drawer). Pure anchor + inline SVG; opens the repo in a new tab. Client
+ * component so it can be reused from both server- and client-side parents.
  */
-import { getTranslations } from "next-intl/server";
+"use client";
+
+import { useTranslations } from "next-intl";
 
 const REPO_URL = "https://github.com/Seancheey/PokeDD";
 
-export async function GitHubStarLink() {
-  const t = await getTranslations("Nav");
+export function GitHubStarLink() {
+  const t = useTranslations("Nav");
   return (
     <a
       href={REPO_URL}
