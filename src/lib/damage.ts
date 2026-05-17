@@ -346,6 +346,47 @@ function speciesDefenseItem(
   return 1;
 }
 
+// ─── Type-resist berries (defender-side, ×0.5 on SE matching-type hit) ───────
+// Chilan Berry is special: always halves Normal-type damage regardless of
+// effectiveness. All others trigger only when the move is super-effective.
+// (Ripen ability quarters instead of halves, but Bounsweet line isn't in Reg
+// M-A — skipping that case until it matters.)
+
+const TYPE_RESIST_BERRIES: Record<string, PokemonType> = {
+  "occa-berry":    "fire",
+  "passho-berry":  "water",
+  "wacan-berry":   "electric",
+  "rindo-berry":   "grass",
+  "yache-berry":   "ice",
+  "chople-berry":  "fighting",
+  "kebia-berry":   "poison",
+  "shuca-berry":   "ground",
+  "coba-berry":    "flying",
+  "payapa-berry":  "psychic",
+  "tanga-berry":   "bug",
+  "charti-berry":  "rock",
+  "kasib-berry":   "ghost",
+  "haban-berry":   "dragon",
+  "colbur-berry":  "dark",
+  "babiri-berry":  "steel",
+  "roseli-berry":  "fairy",
+  "chilan-berry":  "normal", // always; not SE-gated
+};
+
+// ─── Variable-BP / stat-target move tables ───────────────────────────────────
+// Stat-target overrides — the move uses a different stat than its category implies.
+
+/** Special moves that hit the defender's *Def* (not SpD). */
+const SPECIAL_USE_DEF_FOR_DEFENDER = new Set([
+  "psyshock", "psystrike", "secret-sword",
+]);
+
+/** Physical move that uses the user's *Def* in place of Atk. */
+const PHYS_USE_USER_DEF = new Set(["body-press"]);
+
+/** Physical move that uses the *defender's* Atk in place of user's Atk. */
+const PHYS_USE_DEFENDER_ATK = new Set(["foul-play"]);
+
 // ─── Inputs / outputs ────────────────────────────────────────────────────────
 
 export type CalcInput = {
@@ -356,14 +397,21 @@ export type CalcInput = {
     types: [PokemonType, PokemonType | null];
     atk: number;   // base
     spa: number;   // base
+    /** Optional — needed only for Body Press (uses user's Def for offense). */
+    def?: number;
+    spd?: number;
     vpAtk: number;
     vpSpa: number;
+    vpDef?: number;
+    vpSpd?: number;
     nature: Nature;
     ability?: string;
     item?: string;
     status: Status;
     stageAtk: number; // -6..+6
     stageSpa: number;
+    stageDef?: number;
+    stageSpd?: number;
   };
   defender: {
     slug?: string;
@@ -371,14 +419,23 @@ export type CalcInput = {
     hp: number;    // base
     def: number;   // base
     spd: number;   // base
+    /** Optional — needed only for Foul Play (uses defender's Atk for offense). */
+    atk?: number;
+    spa?: number;
     vpHp: number;
     vpDef: number;
     vpSpd: number;
+    vpAtk?: number;
+    vpSpa?: number;
     nature: Nature;
     ability?: string;
     item?: string;
+    /** Optional — needed only for Hex / Wake-Up Slap / Smelling Salts. */
+    status?: Status;
     stageDef: number;
     stageSpd: number;
+    stageAtk?: number;
+    stageSpa?: number;
     hpPct: number;     // 1-100; affects Multiscale, hazard chip
   };
   move: {
@@ -469,16 +526,51 @@ export function calc(input: CalcInput): CalcOutput | null {
   if (d.ability === "dry-skin" && move.type === "water") return zeroResult(d);
 
   // ── Effective stats ──────────────────────────────────────────────────────
-  const aStatKey: StatKey = isPhysical ? "atk" : "spa";
-  const dStatKey: StatKey = isPhysical ? "def" : "spd";
-  const aBaseStat = isPhysical ? a.atk : a.spa;
-  const aVp = isPhysical ? a.vpAtk : a.vpSpa;
-  const dBaseStat = isPhysical ? d.def : d.spd;
-  const dVp = isPhysical ? d.vpDef : d.vpSpd;
-  const aStageRaw = isPhysical ? a.stageAtk : a.stageSpa;
-  const dStageRaw = isPhysical ? d.stageDef : d.stageSpd;
+  // Most moves use Atk/Def (physical) or SpA/SpD (special), but a handful
+  // diverge:
+  //   - Body Press: physical, uses *user's Def* in place of Atk.
+  //   - Foul Play:  physical, uses *defender's Atk* in place of user's Atk.
+  //   - Psyshock & co.: special move, but uses *defender's Def* (not SpD).
+  // We keep `isPhysical` reflecting the move's *category* (so screens, STAB
+  // and category-keyed item checks behave correctly) and instead override the
+  // *source* of A and D below. `aStatIsAtk` tracks whether burn / Choice Band
+  // / etc. should still apply (those mods touch the Atk stat specifically).
 
-  const A0 = computeStat(aBaseStat, aVp, a.nature, aStatKey);
+  const useUserDef = PHYS_USE_USER_DEF.has(move.slug);
+  const useOppAtk = PHYS_USE_DEFENDER_ATK.has(move.slug);
+  const useOppDef = SPECIAL_USE_DEF_FOR_DEFENDER.has(move.slug);
+
+  const aStatKey: StatKey = useUserDef ? "def" : isPhysical ? "atk" : "spa";
+  const dStatKey: StatKey = useOppDef ? "def" : isPhysical ? "def" : "spd";
+
+  const aBaseStat = useUserDef
+    ? (a.def ?? 1)
+    : useOppAtk
+    ? (d.atk ?? 1)
+    : isPhysical ? a.atk : a.spa;
+  const aVp = useUserDef
+    ? (a.vpDef ?? 0)
+    : useOppAtk
+    ? (d.vpAtk ?? 0)
+    : isPhysical ? a.vpAtk : a.vpSpa;
+  const aNatureForOff = useOppAtk ? d.nature : a.nature;
+  const aStageRaw = useUserDef
+    ? (a.stageDef ?? 0)
+    : useOppAtk
+    ? (d.stageAtk ?? 0)
+    : isPhysical ? a.stageAtk : a.stageSpa;
+
+  const dBaseStat = useOppDef ? d.def : isPhysical ? d.def : d.spd;
+  const dVp = useOppDef ? d.vpDef : isPhysical ? d.vpDef : d.vpSpd;
+  const dStageRaw = useOppDef ? d.stageDef : isPhysical ? d.stageDef : d.stageSpd;
+
+  // Burn / Choice Band only apply when the offensive stat is actually Atk.
+  // Body Press uses Def (not Atk), Foul Play uses opponent's Atk — burn check
+  // would need defender's status, which we don't propagate for burn on Foul
+  // Play (uncommon enough to defer).
+  const aStatIsAtk = aStatKey === "atk";
+
+  const A0 = computeStat(aBaseStat, aVp, aNatureForOff, aStatKey);
   const D0 = computeStat(dBaseStat, dVp, d.nature, dStatKey);
   const HP = computeStat(d.hp, d.vpHp, d.nature, "atk", true);
 
@@ -489,8 +581,15 @@ export function calc(input: CalcInput): CalcOutput | null {
   let D = Math.floor(D0 * stageFactor(dStage));
 
   // ── Atk/Def boosts from items + abilities applied to stats ───────────────
-  if (a.item === "choice-band" && isPhysical) { A = Math.floor(A * 1.5); notes.push("Choice Band ×1.5 Atk"); }
-  if (a.item === "choice-specs" && !isPhysical) { A = Math.floor(A * 1.5); notes.push("Choice Specs ×1.5 SpA"); }
+  // Choice Band/Specs boost Atk/SpA specifically — Body Press uses Def, so
+  // Choice Band shouldn't multiply it; same for Foul Play (Band stays with
+  // the defender who isn't wielding the move).
+  if (a.item === "choice-band" && isPhysical && aStatIsAtk) {
+    A = Math.floor(A * 1.5); notes.push("Choice Band ×1.5 Atk");
+  }
+  if (a.item === "choice-specs" && !isPhysical) {
+    A = Math.floor(A * 1.5); notes.push("Choice Specs ×1.5 SpA");
+  }
   if (d.item === "assault-vest" && !isPhysical) { D = Math.floor(D * 1.5); notes.push("Assault Vest ×1.5 SpD"); }
   if (d.item === "eviolite") { D = Math.floor(D * 1.5); notes.push("Eviolite ×1.5"); }
 
@@ -500,12 +599,12 @@ export function calc(input: CalcInput): CalcOutput | null {
   const defMult = speciesDefenseItem(d.item, d.slug, isPhysical ? "def" : "spd");
   if (defMult > 1) { D = Math.floor(D * defMult); notes.push(`${d.item} ×${defMult} ${isPhysical ? "Def" : "SpD"}`); }
 
-  // Huge Power / Pure Power: ×2 Atk
-  if (isPhysical && (a.ability === "huge-power" || a.ability === "pure-power")) {
+  // Huge Power / Pure Power: ×2 Atk (Atk only — not Body Press's Def).
+  if (isPhysical && aStatIsAtk && (a.ability === "huge-power" || a.ability === "pure-power")) {
     A = Math.floor(A * 2); notes.push(`${a.ability} ×2 Atk`);
   }
-  // Guts: ×1.5 Atk when statused (and ignores burn drop, handled below)
-  if (isPhysical && a.ability === "guts" && a.status !== "none") {
+  // Guts: ×1.5 Atk when statused.
+  if (isPhysical && aStatIsAtk && a.ability === "guts" && a.status !== "none") {
     A = Math.floor(A * 1.5); notes.push("Guts ×1.5 Atk");
   }
   // Defeatist: halves Atk + SpA below 50% HP — attacker hpPct isn't modeled;
@@ -548,6 +647,40 @@ export function calc(input: CalcInput): CalcOutput | null {
     moveType = aetherKind[a.ability];
     basePower = Math.floor(basePower * 1.2);
     notes.push(`${a.ability} → ${moveType} & ×1.2`);
+  }
+
+  // ── Variable base-power moves ────────────────────────────────────────────
+  // Slug-keyed BP overrides that depend on attacker/defender state.
+  if (move.slug === "knock-off" && d.item) {
+    basePower = Math.floor(basePower * 1.5);
+    notes.push("Knock Off ×1.5 (defender has item)");
+  }
+  if (move.slug === "acrobatics" && !a.item) {
+    basePower = basePower * 2;
+    notes.push("Acrobatics ×2 (no item)");
+  }
+  if (move.slug === "facade" && a.status !== "none") {
+    basePower = basePower * 2;
+    notes.push("Facade ×2 (statused)");
+  }
+  if (move.slug === "hex" && d.status && d.status !== "none") {
+    basePower = basePower * 2;
+    notes.push("Hex ×2 (defender statused)");
+  }
+  if (move.slug === "wake-up-slap" && d.status === "sleep") {
+    basePower = basePower * 2;
+    notes.push("Wake-Up Slap ×2 (asleep)");
+  }
+  if (move.slug === "smelling-salts" && d.status === "paralysis") {
+    basePower = basePower * 2;
+    notes.push("Smelling Salts ×2 (paralyzed)");
+  }
+  // Weather Ball — 50 BP, doubles + retypes under weather.
+  if (move.slug === "weather-ball") {
+    if (field.weather === "sun") { basePower = 100; moveType = "fire"; notes.push("Weather Ball → Fire, 100 BP"); }
+    else if (field.weather === "rain") { basePower = 100; moveType = "water"; notes.push("Weather Ball → Water, 100 BP"); }
+    else if (field.weather === "sand") { basePower = 100; moveType = "rock"; notes.push("Weather Ball → Rock, 100 BP"); }
+    else if (field.weather === "snow") { basePower = 100; moveType = "ice"; notes.push("Weather Ball → Ice, 100 BP"); }
   }
 
   // ── Base damage ──────────────────────────────────────────────────────────
@@ -737,13 +870,25 @@ export function calc(input: CalcInput): CalcOutput | null {
   if (eff === 0) return zeroResult(d, notes.concat("Immune"));
   dmg = Math.floor(dmg * eff);
 
+  // Type-resist berries — defender-side ×0.5 on matching type. Chilan halves
+  // any Normal-type hit; the rest only halve super-effective hits.
+  if (d.item && TYPE_RESIST_BERRIES[d.item] === moveType) {
+    const isChilan = d.item === "chilan-berry";
+    if (isChilan || eff > 1) {
+      dmg = Math.floor(dmg * 0.5);
+      notes.push(`${d.item} ×0.5 ${moveType}`);
+    }
+  }
+
   // Expert Belt — SE only
   if (a.item === "expert-belt" && eff > 1) {
     dmg = Math.floor(dmg * 1.2); notes.push("Expert Belt ×1.2 SE");
   }
 
-  // Burn — halves physical (Guts ignores; Facade unaffected — not modeled)
-  if (isPhysical && a.status === "burn" && a.ability !== "guts") {
+  // Burn halves physical Atk-based damage. Body Press uses Def, so burn
+  // doesn't apply. Facade is unaffected by burn (handled in BP boost below).
+  // Guts ignores the burn drop.
+  if (isPhysical && aStatIsAtk && a.status === "burn" && a.ability !== "guts" && move.slug !== "facade") {
     dmg = Math.floor(dmg * 0.5); notes.push("Burn ×0.5");
   }
 

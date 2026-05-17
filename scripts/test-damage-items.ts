@@ -58,22 +58,29 @@ function mkInput(
       slug: attacker.slug,
       types: [attacker.type1 as PokemonType, attacker.type2 as PokemonType | null],
       atk: attacker.atk, spa: attacker.spa,
+      def: attacker.def, spd: attacker.spd,
       vpAtk: opts.vpAtk ?? 32, vpSpa: opts.vpSpa ?? 32,
+      vpDef: opts.vpDef ?? 32, vpSpd: opts.vpSpd ?? 32,
       nature: opts.attackerNature ?? "Adamant",
       ability: opts.attackerAbility,
       item: opts.attackerItem,
       status: "none",
       stageAtk: 0, stageSpa: 0,
+      stageDef: 0, stageSpd: 0,
     },
     defender: {
       slug: defender.slug,
       types: [defender.type1 as PokemonType, defender.type2 as PokemonType | null],
       hp: defender.hp, def: defender.def, spd: defender.spd,
+      atk: defender.atk, spa: defender.spa,
       vpHp: opts.vpHp ?? 32, vpDef: opts.vpDef ?? 32, vpSpd: opts.vpSpd ?? 32,
+      vpAtk: 32, vpSpa: 32,
       nature: opts.defenderNature ?? "Bold",
       ability: opts.defenderAbility,
       item: opts.defenderItem,
+      status: "none",
       stageDef: 0, stageSpd: 0,
+      stageAtk: 0, stageSpa: 0,
       hpPct: 100,
     },
     move: { ...move, targetShape: "selected-pokemon" },
@@ -301,6 +308,193 @@ async function main() {
     });
   }
 
+  // ── Type-resist berries ────────────────────────────────────────────────
+  // Defender holding the matching berry halves SE damage of the matching type.
+  if (kingambit && basculegion) {
+    // Sucker Punch is Dark, Basculegion-Male is Water/Ghost → 2× SE (Dark vs Ghost).
+    cases.push({
+      name: "Colbur Berry halves Sucker Punch on Basculegion (×0.5)",
+      setup: () => mkInput(kingambit, basculegion, MOVES.suckerPunch, { defenderItem: "colbur-berry" }),
+      baseline: () => mkInput(kingambit, basculegion, MOVES.suckerPunch),
+      expectRatio: 0.5,
+    });
+  }
+  // Charizard Fire/Flying. Surf (Water) vs Charizard = SE → Passho halves.
+  if (blastoise && charizard) {
+    cases.push({
+      name: "Passho Berry halves Surf on Charizard (×0.5)",
+      setup: () => mkInput(blastoise, charizard, MOVES.surf, { defenderItem: "passho-berry" }),
+      baseline: () => mkInput(blastoise, charizard, MOVES.surf),
+      expectRatio: 0.5,
+    });
+    // Wrong berry doesn't fire.
+    cases.push({
+      name: "Yache Berry on Surf (wrong type, no effect)",
+      setup: () => mkInput(blastoise, charizard, MOVES.surf, { defenderItem: "yache-berry" }),
+      baseline: () => mkInput(blastoise, charizard, MOVES.surf),
+      expectRatio: 1.0,
+    });
+  }
+  // Chilan Berry: always halves Normal regardless of SE.
+  // Snorlax is Normal; a Normal-typed move vs Normal-typed defender is 1× eff,
+  // so a regular berry wouldn't trigger — Chilan should.
+  const snorlax = mons.get("snorlax");
+  if (snorlax && charizard) {
+    cases.push({
+      name: "Chilan Berry halves Hyper Beam on neutral target (×0.5)",
+      setup: () => mkInput(
+        snorlax, charizard,
+        { slug: "hyper-beam", type: "normal", category: "special", power: 150 },
+        { defenderItem: "chilan-berry" },
+      ),
+      baseline: () => mkInput(
+        snorlax, charizard,
+        { slug: "hyper-beam", type: "normal", category: "special", power: 150 },
+      ),
+      expectRatio: 0.5,
+    });
+    // Other berries shouldn't fire on neutral hits.
+    cases.push({
+      name: "Yache Berry on neutral Ice (no SE, no boost)",
+      setup: () => mkInput(
+        snorlax, charizard,
+        { slug: "ice-beam", type: "ice", category: "special", power: 90 },
+        { defenderItem: "yache-berry" },
+      ),
+      baseline: () => mkInput(
+        snorlax, charizard,
+        { slug: "ice-beam", type: "ice", category: "special", power: 90 },
+      ),
+      expectRatio: 1.0,
+    });
+  }
+
+  // ── Variable base-power moves ─────────────────────────────────────────
+  // Knock Off: ×1.5 if defender has item.
+  if (kingambit && basculegion) {
+    cases.push({
+      name: "Knock Off boost when defender has item (×1.5)",
+      setup: () => mkInput(
+        kingambit, basculegion,
+        { slug: "knock-off", type: "dark", category: "physical", power: 65 },
+        { defenderItem: "leftovers" },
+      ),
+      baseline: () => mkInput(
+        kingambit, basculegion,
+        { slug: "knock-off", type: "dark", category: "physical", power: 65 },
+      ),
+      expectRatio: 1.5,
+    });
+  }
+  // Acrobatics: ×2 when attacker holds nothing.
+  if (charizard && blastoise) {
+    cases.push({
+      name: "Acrobatics ×2 when no item",
+      setup: () => {
+        const inp = mkInput(charizard, blastoise, { slug: "acrobatics", type: "flying", category: "physical", power: 55 });
+        inp.attacker.item = undefined;
+        return inp;
+      },
+      baseline: () => mkInput(
+        charizard, blastoise,
+        { slug: "acrobatics", type: "flying", category: "physical", power: 55 },
+        { attackerItem: "sharp-beak" }, // ANY item disables the doubler
+      ),
+      expectRatio: 2.0 / 1.2, // baseline is boosted by Sharp Beak ×1.2
+    });
+  }
+  // Facade: ×2 BP when attacker is burned. Burn would normally halve damage
+  // but Facade ignores the cut, so net effect is exactly ×2.
+  // Pick a non-Ghost defender — Basculegion-M is Water/Ghost (Normal immune).
+  const ironHandsFacade = mons.get("iron-hands");
+  if (kingambit && ironHandsFacade) {
+    cases.push({
+      name: "Facade ×2 BP when statused (burn drop suppressed)",
+      setup: () => {
+        const inp = mkInput(kingambit, ironHandsFacade, { slug: "facade", type: "normal", category: "physical", power: 70 });
+        inp.attacker.status = "burn";
+        return inp;
+      },
+      baseline: () => mkInput(
+        kingambit, ironHandsFacade,
+        { slug: "facade", type: "normal", category: "physical", power: 70 },
+      ),
+      expectRatio: 2.0,
+    });
+  }
+  // Hex: ×2 if defender statused.
+  if (kingambit && basculegion) {
+    cases.push({
+      name: "Hex ×2 when defender statused",
+      setup: () => {
+        const inp = mkInput(kingambit, basculegion, { slug: "hex", type: "ghost", category: "special", power: 65 });
+        inp.defender.status = "poison";
+        return inp;
+      },
+      baseline: () => mkInput(
+        kingambit, basculegion,
+        { slug: "hex", type: "ghost", category: "special", power: 65 },
+      ),
+      expectRatio: 2.0,
+    });
+  }
+
+  // ── Stat-target moves ─────────────────────────────────────────────────
+  // For these we want to verify that the move's *stat source* genuinely
+  // switched — we compare the override against a same-power, same-type
+  // counterpart that lacks the override (the "control" slug isn't in the
+  // override set, so it uses the category-default stat). Hardy nature on
+  // both sides keeps the comparison clean of nature multipliers.
+
+  const ironHands = mons.get("iron-hands");
+  // Psyshock: special move hitting Def (not SpD). Iron Hands SpD=68 < Def=108
+  // → Psyshock hits the *higher* stat → DEALS LESS damage. Expected ratio:
+  //   D_spd / D_def = (68+20+32)/(108+20+32) = 120/160 = 0.75.
+  if (latios && ironHands) {
+    cases.push({
+      name: "Psyshock hits defender's Def (Iron Hands: less damage than SpD-keyed)",
+      setup: () => mkInput(latios, ironHands,
+        { slug: "psyshock", type: "psychic", category: "special", power: 80 },
+        { attackerNature: "Hardy", defenderNature: "Hardy" }),
+      baseline: () => mkInput(latios, ironHands,
+        { slug: "psyshock-control", type: "psychic", category: "special", power: 80 },
+        { attackerNature: "Hardy", defenderNature: "Hardy" }),
+      expectRatio: 120 / 160, // 0.75
+    });
+  }
+  // Body Press: physical, uses user's Def. Skarmory Atk=80, Def=140.
+  // A_def / A_atk = (140+20+32)/(80+20+32) = 192/132 = 1.4545.
+  const extra = await loadMons(["skarmory", "meowscarada"]);
+  const skarmory = extra.get("skarmory");
+  if (skarmory && blastoise) {
+    cases.push({
+      name: "Body Press uses user's Def (Skarmory Def>Atk: stronger)",
+      setup: () => mkInput(skarmory, blastoise,
+        { slug: "body-press", type: "fighting", category: "physical", power: 80 },
+        { attackerNature: "Hardy", defenderNature: "Hardy" }),
+      baseline: () => mkInput(skarmory, blastoise,
+        { slug: "body-press-control", type: "fighting", category: "physical", power: 80 },
+        { attackerNature: "Hardy", defenderNature: "Hardy" }),
+      expectRatio: 192 / 132, // 1.45
+    });
+  }
+  // Foul Play: uses *defender's* Atk. Meowscarada (Atk 110) vs Iron Hands
+  // (Atk 140). Foul Play stat A = (140+20+32) = 192; baseline A from user
+  // = (110+20+32) = 162. Ratio 192/162 = 1.185.
+  const meowscarada = extra.get("meowscarada");
+  if (meowscarada && ironHands) {
+    cases.push({
+      name: "Foul Play uses defender's Atk (Iron Hands>Meowscarada: stronger)",
+      setup: () => mkInput(meowscarada, ironHands,
+        { slug: "foul-play", type: "dark", category: "physical", power: 95 },
+        { attackerNature: "Hardy", defenderNature: "Hardy" }),
+      baseline: () => mkInput(meowscarada, ironHands,
+        { slug: "foul-play-control", type: "dark", category: "physical", power: 95 },
+        { attackerNature: "Hardy", defenderNature: "Hardy" }),
+      expectRatio: 192 / 162, // ≈1.185
+    });
+  }
+
   // Run all cases
   let pass = 0, fail = 0;
   for (const c of cases) {
@@ -315,7 +509,12 @@ async function main() {
     // Tolerance derives from floor() truncation at each pipeline step.
     // Small damage values (Champions has a compressed stat range) accumulate
     // ~1% drift per floor. Allow ±0.06 for ×1.2 boosts, ±0.10 for ×2 boosts.
-    const tol = c.expectRatio >= 1.8 ? 0.10 : 0.06;
+    const tol =
+      c.expectRatio <= 0.6
+        ? 0.04
+        : c.expectRatio >= 1.8
+        ? 0.10
+        : 0.06;
     const ok = Math.abs(got - c.expectRatio) <= tol;
     if (ok) {
       console.log(`  ✓ ${c.name}  (ratio ${got.toFixed(3)})`);
