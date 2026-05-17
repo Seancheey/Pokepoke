@@ -220,8 +220,8 @@ function CompareCard({
         <div className="min-w-0 flex-1">
           <div className="truncate font-medium">{mon.name}</div>
           <div className="truncate text-zinc-500">
-            {mon.ability || "—"}
-            {mon.item ? <> · {mon.item.replace(/-/g, " ")}</> : null}
+            {mon.abilityName || mon.ability || "—"}
+            {mon.item ? <> · {mon.itemName || mon.item.replace(/-/g, " ")}</> : null}
           </div>
           <div className="truncate text-zinc-500">
             {mon.nature} · {filledMoves}/4 · EV {mon.ev.join("/")}

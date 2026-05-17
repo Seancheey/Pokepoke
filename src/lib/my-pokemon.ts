@@ -17,16 +17,19 @@
 export type SavedMon = {
   id: string;
   slug: string;
-  name: string;        // localized at save time
+  name: string;            // localized species name at save time
   spriteUrl: string;
   type1: string;
   type2: string | null;
-  ability: string;
-  item: string;
+  ability: string;         // slug (canonical, used to load back)
+  abilityName?: string;    // localized at save time (optional for legacy entries)
+  item: string;            // slug
+  itemName?: string;       // localized at save time
   nature: string;
-  moves: string[];     // length 4, "" for empty
+  moves: string[];         // length 4, "" for empty (slugs)
+  moveNames?: string[];    // localized move names, parallel to moves
   ev: [number, number, number, number, number, number];
-  savedAt: number;     // unix ms
+  savedAt: number;         // unix ms
 };
 
 const STORAGE_KEY = "pokedd:my-pokemon";

@@ -421,6 +421,9 @@ function SlotCard({
           slot={slot}
           ev={ev}
           species={p}
+          abilityBySlug={abilityBySlug}
+          itemBySlug={itemBySlug}
+          moveBySlug={moveBySlug}
         />
         <button
           onClick={onRemove}
@@ -905,11 +908,20 @@ function SaveToMyPokemon({
   slot,
   ev,
   species,
+  abilityBySlug,
+  itemBySlug,
+  moveBySlug,
 }: {
   slot: ShareSlot;
   ev: number[];
   species: RefPokemon;
+  abilityBySlug: Map<string, RefAbility>;
+  itemBySlug: Map<string, RefItem>;
+  moveBySlug: Map<string, RefMove>;
 }) {
+  const ability = slot.a ?? "";
+  const item = slot.i ?? "";
+  const moves = [...(slot.m ?? [])].concat(Array(4).fill("")).slice(0, 4);
   return (
     <SaveMyPokemonButton
       variant="icon"
@@ -919,14 +931,17 @@ function SaveToMyPokemon({
         spriteUrl: species.spriteUrl,
         type1: species.type1,
         type2: species.type2,
-        ability: slot.a ?? "",
-        item: slot.i ?? "",
+        ability,
+        abilityName: ability ? (abilityBySlug.get(ability)?.name ?? ability) : "",
+        item,
+        itemName: item ? (itemBySlug.get(item)?.name ?? item) : "",
         // Team Builder doesn't track nature explicitly per slot today; the
         // Smogon-derived spread preset is applied to the EV array but the
         // nature isn't echoed back into the share format. Default to Hardy
         // (neutral) — user can edit if loaded into Pokémon Builder later.
         nature: "Hardy",
-        moves: [...(slot.m ?? [])].concat(Array(4).fill("")).slice(0, 4),
+        moves,
+        moveNames: moves.map((m) => (m ? (moveBySlug.get(m)?.name ?? m) : "")),
         ev: [ev[0] ?? 0, ev[1] ?? 0, ev[2] ?? 0, ev[3] ?? 0, ev[4] ?? 0, ev[5] ?? 0],
       }}
     />

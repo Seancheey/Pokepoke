@@ -417,9 +417,12 @@ function ConfigPanel({
           type1: p.type1,
           type2: p.type2,
           ability: build.ability,
+          abilityName: abilityBySlug.get(build.ability)?.name ?? build.ability,
           item: build.item,
+          itemName: build.item ? (itemBySlug.get(build.item)?.name ?? build.item) : "",
           nature: build.nature,
           moves: build.moves,
+          moveNames: build.moves.map((m) => (m ? (moveBySlug.get(m)?.name ?? m) : "")),
           ev: build.ev,
         }}
       />

@@ -154,8 +154,8 @@ function SavedMonRow({
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">{mon.name}</div>
           <div className="truncate text-xs text-zinc-500">
-            {mon.ability || "—"}
-            {mon.item ? <> · {mon.item.replace(/-/g, " ")}</> : null}
+            {mon.abilityName || mon.ability || "—"}
+            {mon.item ? <> · {mon.itemName || mon.item.replace(/-/g, " ")}</> : null}
             {filledMoves ? <> · {filledMoves}/4</> : null}
           </div>
         </div>
