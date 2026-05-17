@@ -4,6 +4,7 @@ import { LocaleSwitcher } from "./LocaleSwitcher";
 import { BrandMark } from "./BrandMark";
 import { FormatToggle } from "./FormatToggle";
 import { GitHubStarLink } from "./GitHubStarLink";
+import { MobileMenu } from "./MobileMenu";
 
 export async function Nav() {
   const t = await getTranslations("Nav");
@@ -40,23 +41,16 @@ export async function Nav() {
             </Link>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2 md:ml-0">
+        {/* Desktop-only right-side controls; mobile lives behind the hamburger. */}
+        <div className="ml-auto hidden items-center gap-2 md:flex">
           <GitHubStarLink />
           <FormatToggle />
           <LocaleSwitcher />
         </div>
+        <div className="ml-auto md:hidden">
+          <MobileMenu sectionLinks={SECTION_LINKS} />
+        </div>
       </div>
-      <nav className="flex items-center gap-1 overflow-x-auto border-t border-zinc-100 px-4 py-2 md:hidden dark:border-zinc-900">
-        {SECTION_LINKS.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className="shrink-0 rounded-md px-2.5 py-1 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          >
-            {l.label}
-          </Link>
-        ))}
-      </nav>
     </header>
   );
 }

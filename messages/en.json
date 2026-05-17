@@ -15,7 +15,10 @@
     "formatSingles": "Singles",
     "formatDoubles": "Doubles",
     "star": "Star",
-    "starOnGithub": "Star pokeDD on GitHub"
+    "starOnGithub": "Star pokeDD on GitHub",
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "Hub": {
     "regulationBadge": "Reg M-A",

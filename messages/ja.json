@@ -15,7 +15,10 @@
     "formatSingles": "シングル",
     "formatDoubles": "ダブル",
     "star": "Star",
-    "starOnGithub": "GitHubでpokeDDにスターを付ける"
+    "starOnGithub": "GitHubでpokeDDにスターを付ける",
+    "menu": "メニュー",
+    "openMenu": "メニューを開く",
+    "closeMenu": "メニューを閉じる"
   },
   "Hub": {
     "regulationBadge": "レギュ M-A",

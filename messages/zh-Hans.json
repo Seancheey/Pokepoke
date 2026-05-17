@@ -15,7 +15,10 @@
     "formatSingles": "单打",
     "formatDoubles": "双打",
     "star": "Star",
-    "starOnGithub": "在 GitHub 给 pokeDD 点 star"
+    "starOnGithub": "在 GitHub 给 pokeDD 点 star",
+    "menu": "菜单",
+    "openMenu": "打开菜单",
+    "closeMenu": "关闭菜单"
   },
   "Hub": {
     "regulationBadge": "规则 M-A",
