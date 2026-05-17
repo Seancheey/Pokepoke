@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { routing } from "@/i18n/routing";
 import { Nav } from "@/components/Nav";
+import { MyPokemonFAB } from "@/components/MyPokemonFAB";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -42,6 +43,7 @@ export default async function LocaleLayout({
       <footer className="mx-auto mt-16 max-w-7xl border-t border-zinc-200 px-4 py-8 text-xs text-zinc-500 dark:border-zinc-800">
         {t("tagline")}
       </footer>
+      <MyPokemonFAB />
     </NextIntlClientProvider>
   );
 }

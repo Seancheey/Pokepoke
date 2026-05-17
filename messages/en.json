@@ -266,6 +266,18 @@
     "loading": "Loading…",
     "invalidShare": "Couldn't decode share link. Starting fresh."
   },
+  "MyPokemon": {
+    "title": "My Pokémon",
+    "empty": "No saved Pokémon yet. Use the ★ button on a build to save it here.",
+    "save": "Save to My Pokémon",
+    "saved": "Saved",
+    "remove": "Remove",
+    "clearAll": "Clear all",
+    "confirmClear": "Remove all saved Pokémon? This can't be undone.",
+    "close": "Close",
+    "clickToLoad": "Click to load into the active builder",
+    "noItem": "no item"
+  },
   "PokemonBuilder": {
     "title": "Pokémon Builder",
     "subtitle": "Pick a Pokémon and see exactly how it stacks up against the meta — speed tiers, OHKO ranges both directions, and damage rolls update live as you tweak the build.",

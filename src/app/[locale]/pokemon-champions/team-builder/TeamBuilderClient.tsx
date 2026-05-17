@@ -17,6 +17,7 @@ import {
   type ShareSlot,
 } from "@/lib/team-share";
 import { cn } from "@/lib/cn";
+import { addSavedMon, onLoadSavedMon } from "@/lib/my-pokemon";
 
 export type RefPokemon = {
   slug: string;
@@ -139,6 +140,31 @@ export function TeamBuilderClient({
       ],
     }));
   }
+
+  // Subscribe to "load saved mon" events from the My Pokémon FAB — append
+  // a new slot pre-populated with the saved config (or do nothing if the
+  // team is already full).
+  useEffect(() => {
+    return onLoadSavedMon((mon) => {
+      if (!pokemonBySlug.has(mon.slug)) return;
+      setTeam((prev) => {
+        if (prev.slots.length >= 6) return prev;
+        return {
+          ...prev,
+          slots: [
+            ...prev.slots,
+            {
+              s: mon.slug,
+              a: mon.ability,
+              i: mon.item || undefined,
+              m: mon.moves.filter(Boolean),
+              v: mon.ev,
+            },
+          ],
+        };
+      });
+    });
+  }, [pokemonBySlug]);
 
   function removeSlot(index: number) {
     setTeam((prev) => ({ ...prev, slots: prev.slots.filter((_, i) => i !== index) }));
@@ -390,6 +416,11 @@ function SlotCard({
             {p.type2 ? <TypeChip type={p.type2 as PokemonType} size="sm" /> : null}
           </div>
         </div>
+        <SaveToMyPokemon
+          slot={slot}
+          ev={ev}
+          species={p}
+        />
         <button
           onClick={onRemove}
           aria-label={t("remove")}
@@ -862,5 +893,58 @@ function TeamOffenseTable({
         </table>
       </div>
     </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Save-to-My-Pokémon button (slot header)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SaveToMyPokemon({
+  slot,
+  ev,
+  species,
+}: {
+  slot: ShareSlot;
+  ev: number[];
+  species: RefPokemon;
+}) {
+  const tMy = useTranslations("MyPokemon");
+  const [savedToast, setSavedToast] = useState(false);
+  function onClick() {
+    addSavedMon({
+      slug: slot.s,
+      name: species.name,
+      spriteUrl: species.spriteUrl,
+      type1: species.type1,
+      type2: species.type2,
+      ability: slot.a ?? "",
+      item: slot.i ?? "",
+      // Team Builder doesn't track nature explicitly per slot today; the
+      // Smogon-derived spread preset is applied to the EV array but the
+      // nature isn't echoed back into the share format. Default to Hardy
+      // (neutral) — user can edit if loaded into Pokémon Builder later.
+      nature: "Hardy",
+      moves: [...(slot.m ?? [])].concat(Array(4).fill("")).slice(0, 4),
+      ev: [ev[0] ?? 0, ev[1] ?? 0, ev[2] ?? 0, ev[3] ?? 0, ev[4] ?? 0, ev[5] ?? 0],
+    });
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 1400);
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={tMy("save")}
+      aria-label={tMy("save")}
+      className={cn(
+        "rounded-md p-1 text-base transition-colors",
+        savedToast
+          ? "text-emerald-600"
+          : "text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:hover:bg-zinc-800",
+      )}
+    >
+      {savedToast ? "✓" : "★"}
+    </button>
   );
 }
