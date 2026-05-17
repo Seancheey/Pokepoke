@@ -392,7 +392,8 @@
     "fairy": "Fairy"
   },
   "Footer": {
-    "tagline": "pokeDD · companion for Pokémon Champions · seed data only — usage stats are illustrative."
+    "tagline": "pokeDD · companion for Pokémon Champions · seed data only — usage stats are illustrative.",
+    "feedback": "Leave feedback"
   },
   "Meta": {
     "title": "pokeDD — Pokémon Champions",
