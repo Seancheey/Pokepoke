@@ -71,6 +71,39 @@ export function findSavedBySlug(slug: string): SavedMon | null {
   return loadAll().find((m) => m.slug === slug) ?? null;
 }
 
+/**
+ * Returns true when the two configs match exactly on every field the user can
+ * tweak: species, ability, item, nature, EVs (in order) and the moveset (order
+ * insensitive, empty slots dropped). Used to mark the ★ button as "already
+ * saved" so the user knows the current configuration is in their stash.
+ */
+export function isSameConfig(
+  a: Omit<SavedMon, "id" | "savedAt">,
+  b: Omit<SavedMon, "id" | "savedAt">,
+): boolean {
+  if (a.slug !== b.slug) return false;
+  if (a.ability !== b.ability) return false;
+  if (a.item !== b.item) return false;
+  if (a.nature !== b.nature) return false;
+  if (a.ev.length !== b.ev.length) return false;
+  for (let i = 0; i < a.ev.length; i++) {
+    if (a.ev[i] !== b.ev[i]) return false;
+  }
+  const movesA = a.moves.filter(Boolean).slice().sort();
+  const movesB = b.moves.filter(Boolean).slice().sort();
+  if (movesA.length !== movesB.length) return false;
+  for (let i = 0; i < movesA.length; i++) {
+    if (movesA[i] !== movesB[i]) return false;
+  }
+  return true;
+}
+
+export function findExactMatch(
+  input: Omit<SavedMon, "id" | "savedAt">,
+): SavedMon | null {
+  return loadAll().find((m) => isSameConfig(input, m)) ?? null;
+}
+
 export function replaceSavedMon(
   id: string,
   input: Omit<SavedMon, "id" | "savedAt">,

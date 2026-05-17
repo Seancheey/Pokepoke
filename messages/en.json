@@ -271,6 +271,7 @@
     "empty": "No saved Pokémon yet. Use the ★ button on a build to save it here.",
     "save": "Save to My Pokémon",
     "saved": "Saved",
+    "alreadySaved": "Already saved",
     "remove": "Remove",
     "clearAll": "Clear all",
     "confirmClear": "Remove all saved Pokémon? This can't be undone.",

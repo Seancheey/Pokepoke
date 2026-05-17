@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   addSavedMon,
+  findExactMatch,
   findSavedBySlug,
+  onSavedMonsChange,
   replaceSavedMon,
   type SavedMon,
 } from "@/lib/my-pokemon";
@@ -27,6 +29,18 @@ export function SaveMyPokemonButton({
   const t = useTranslations("MyPokemon");
   const [savedToast, setSavedToast] = useState(false);
   const [dupExisting, setDupExisting] = useState<SavedMon | null>(null);
+  const [exactMatch, setExactMatch] = useState<SavedMon | null>(null);
+
+  // Re-check whether the current config exactly matches an existing saved
+  // entry. Recomputed when `mon` changes (via the serialized signature) and
+  // when localStorage changes (someone added/removed/cleared elsewhere).
+  const monKey = stableKey(mon);
+  useEffect(() => {
+    const check = () => setExactMatch(findExactMatch(mon));
+    check();
+    return onSavedMonsChange(check);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monKey]);
 
   function flashSaved() {
     setSavedToast(true);
@@ -34,6 +48,12 @@ export function SaveMyPokemonButton({
   }
 
   function onSaveClick() {
+    if (exactMatch) {
+      // Already saved with the same config — nothing meaningful to do, but
+      // still flash a quick "already saved" hint so the click registers.
+      flashSaved();
+      return;
+    }
     const existing = findSavedBySlug(mon.slug);
     if (existing) {
       setDupExisting(existing);
@@ -58,37 +78,50 @@ export function SaveMyPokemonButton({
     setDupExisting(null);
   }
 
+  const tooltip = exactMatch ? t("alreadySaved") : t("save");
+  const pillLabel = savedToast
+    ? `✓ ${t("saved")}`
+    : exactMatch
+    ? `★ ${t("alreadySaved")}`
+    : `★ ${t("save")}`;
+  const iconLabel = savedToast ? "✓" : "★";
+
   return (
     <>
       {variant === "pill" ? (
         <button
           type="button"
           onClick={onSaveClick}
+          title={tooltip}
           className={cn(
             "w-full rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors",
             savedToast
               ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+              : exactMatch
+              ? "border-amber-400 bg-amber-50 text-amber-700 dark:border-amber-600 dark:bg-amber-950/30 dark:text-amber-300"
               : "border-zinc-300 bg-white text-zinc-700 hover:border-red-300 hover:bg-red-50 hover:text-red-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-red-900 dark:hover:bg-red-950/30 dark:hover:text-red-300",
             className,
           )}
         >
-          {savedToast ? `✓ ${t("saved")}` : `★ ${t("save")}`}
+          {pillLabel}
         </button>
       ) : (
         <button
           type="button"
           onClick={onSaveClick}
-          title={t("save")}
-          aria-label={t("save")}
+          title={tooltip}
+          aria-label={tooltip}
           className={cn(
             "rounded-md p-1 text-base transition-colors",
             savedToast
               ? "text-emerald-600"
+              : exactMatch
+              ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40"
               : "text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:hover:bg-zinc-800",
             className,
           )}
         >
-          {savedToast ? "✓" : "★"}
+          {iconLabel}
         </button>
       )}
 
@@ -197,4 +230,18 @@ function CompareCard({
       </div>
     </div>
   );
+}
+
+// Stable stringification of the config so the match effect re-fires only when
+// the underlying values change, not when the parent re-renders with a fresh
+// object reference.
+function stableKey(mon: MonInput): string {
+  return [
+    mon.slug,
+    mon.ability,
+    mon.item,
+    mon.nature,
+    mon.ev.join(","),
+    mon.moves.filter(Boolean).slice().sort().join(","),
+  ].join("|");
 }
