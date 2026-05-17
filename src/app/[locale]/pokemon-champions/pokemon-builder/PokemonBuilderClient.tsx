@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { TypeChip } from "@/components/TypeChip";
 import { Combobox, type ComboboxOption } from "@/components/Combobox";
@@ -82,6 +82,13 @@ type Build = {
   stages: { atk: number; def: number; spa: number; spd: number; spe: number };
 };
 
+const ANALYSIS_TABS = [
+  { id: "speed", labelKey: "tabSpeed" },
+  { id: "offense", labelKey: "tabOffense" },
+  { id: "defense", labelKey: "tabDefense" },
+] as const;
+type AnalysisTabId = (typeof ANALYSIS_TABS)[number]["id"];
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function PokemonBuilderClient({
@@ -96,15 +103,14 @@ export function PokemonBuilderClient({
   items: BuilderRefItem[];
 }) {
   const t = useTranslations("PokemonBuilder");
-  const tStat = useTranslations("TeamBuilder.evStat");
 
   // Global format preference (Nav title-bar toggle) — flips singles/doubles
   // and re-derives the per-Pokémon usage slice on the fly.
-  const [format, setFormat] = useState<BattleFormat>("doubles");
-  useEffect(() => {
-    setFormat(loadFormatPref());
-    return onFormatPrefChange(setFormat);
-  }, []);
+  const format = useSyncExternalStore<BattleFormat>(
+    onFormatPrefChange,
+    loadFormatPref,
+    () => "doubles" satisfies BattleFormat,
+  );
 
   const pokemon: BuilderRefPokemon[] = useMemo(
     () => pokemonRaw.map((p) => ({
@@ -228,7 +234,6 @@ export function PokemonBuilderClient({
           itemBySlug={itemBySlug}
           pickerOptions={pickerOptions}
           allMoves={moves}
-          allAbilities={abilities}
           allItems={items}
           targets={targets}
           customSlugs={customSlugs}
@@ -250,7 +255,6 @@ function BuilderBody({
   itemBySlug,
   pickerOptions,
   allMoves,
-  allAbilities,
   allItems,
   targets,
   customSlugs,
@@ -264,14 +268,13 @@ function BuilderBody({
   itemBySlug: Map<string, BuilderRefItem>;
   pickerOptions: ComboboxOption[];
   allMoves: BuilderRefMove[];
-  allAbilities: BuilderRefAbility[];
   allItems: BuilderRefItem[];
   targets: BuilderRefPokemon[];
   customSlugs: string[];
   setCustomSlugs: (s: string[] | ((prev: string[]) => string[])) => void;
 }) {
   const t = useTranslations("PokemonBuilder");
-  const tStat = useTranslations("TeamBuilder.evStat");
+  const [activeTab, setActiveTab] = useState<AnalysisTabId>("speed");
   const p = pokemonBySlug.get(build.slug);
   if (!p) return null;
 
@@ -282,8 +285,39 @@ function BuilderBody({
   // Reset to a fresh species pick — clears all overrides.
   function reset() { setBuild(null); }
 
+  function focusAnalysisTab(id: AnalysisTabId) {
+    setActiveTab(id);
+    requestAnimationFrame(() => {
+      document.getElementById(`pokemon-builder-tab-${id}`)?.focus();
+    });
+  }
+
+  function onAnalysisTabKeyDown(
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    id: AnalysisTabId,
+  ) {
+    const current = ANALYSIS_TABS.findIndex((tab) => tab.id === id);
+    const last = ANALYSIS_TABS.length - 1;
+    let next = current;
+
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      next = current === last ? 0 : current + 1;
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      next = current === 0 ? last : current - 1;
+    } else if (event.key === "Home") {
+      next = 0;
+    } else if (event.key === "End") {
+      next = last;
+    } else {
+      return;
+    }
+
+    event.preventDefault();
+    focusAnalysisTab(ANALYSIS_TABS[next].id);
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
+    <div className="space-y-6">
       <ConfigPanel
         p={p}
         build={build}
@@ -294,34 +328,88 @@ function BuilderBody({
         itemBySlug={itemBySlug}
         pickerOptions={pickerOptions}
         allMoves={allMoves}
-        allAbilities={allAbilities}
         allItems={allItems}
         setBuild={setBuild}
         pokemonBySlug={pokemonBySlug}
       />
-      <div className="space-y-6 min-w-0">
-        <ComputedStatsCard p={p} build={build} />
-        <SpeedTierCard p={p} build={build} targets={targets} />
-        <OffenseMatrixCard
-          p={p}
-          build={build}
-          targets={targets}
-          moveBySlug={moveBySlug}
-          pokemonBySlug={pokemonBySlug}
-        />
-        <DefenseMatrixCard
-          p={p}
-          build={build}
-          targets={targets}
-          moveBySlug={moveBySlug}
-        />
-        <CustomTargetsCard
-          customSlugs={customSlugs}
-          setCustomSlugs={setCustomSlugs}
-          pickerOptions={pickerOptions}
-          pokemonBySlug={pokemonBySlug}
-        />
-      </div>
+      <ComputedStatsCard p={p} build={build} />
+      <CustomTargetsCard
+        customSlugs={customSlugs}
+        setCustomSlugs={setCustomSlugs}
+        pickerOptions={pickerOptions}
+        pokemonBySlug={pokemonBySlug}
+      />
+
+      <section className="min-w-0">
+        <div
+          role="tablist"
+          aria-label={t("analysisTabs")}
+          className="flex gap-1 overflow-x-auto rounded-lg border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-950"
+        >
+          {ANALYSIS_TABS.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                id={`pokemon-builder-tab-${tab.id}`}
+                aria-selected={active}
+                aria-controls={`pokemon-builder-panel-${tab.id}`}
+                tabIndex={active ? 0 : -1}
+                onClick={() => setActiveTab(tab.id)}
+                onKeyDown={(event) => onAnalysisTabKeyDown(event, tab.id)}
+                className={cn(
+                  "min-h-10 shrink-0 rounded-md px-3 py-2 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500",
+                  active
+                    ? "bg-white text-zinc-950 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:text-zinc-50 dark:ring-zinc-800"
+                    : "text-zinc-600 hover:bg-white/70 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-900/70 dark:hover:text-zinc-100",
+                )}
+              >
+                {t(tab.labelKey as never)}
+              </button>
+            );
+          })}
+        </div>
+
+        <div
+          role="tabpanel"
+          id="pokemon-builder-panel-speed"
+          aria-labelledby="pokemon-builder-tab-speed"
+          hidden={activeTab !== "speed"}
+          className="mt-4 min-w-0"
+        >
+          <SpeedTierCard p={p} build={build} targets={targets} />
+        </div>
+        <div
+          role="tabpanel"
+          id="pokemon-builder-panel-offense"
+          aria-labelledby="pokemon-builder-tab-offense"
+          hidden={activeTab !== "offense"}
+          className="mt-4 min-w-0"
+        >
+          <OffenseMatrixCard
+            p={p}
+            build={build}
+            targets={targets}
+            moveBySlug={moveBySlug}
+          />
+        </div>
+        <div
+          role="tabpanel"
+          id="pokemon-builder-panel-defense"
+          aria-labelledby="pokemon-builder-tab-defense"
+          hidden={activeTab !== "defense"}
+          className="mt-4 min-w-0"
+        >
+          <DefenseMatrixCard
+            p={p}
+            build={build}
+            targets={targets}
+            moveBySlug={moveBySlug}
+          />
+        </div>
+      </section>
     </div>
   );
 }
@@ -339,7 +427,6 @@ function ConfigPanel({
   itemBySlug,
   pickerOptions,
   allMoves,
-  allAbilities,
   allItems,
   pokemonBySlug,
 }: {
@@ -353,7 +440,6 @@ function ConfigPanel({
   itemBySlug: Map<string, BuilderRefItem>;
   pickerOptions: ComboboxOption[];
   allMoves: BuilderRefMove[];
-  allAbilities: BuilderRefAbility[];
   allItems: BuilderRefItem[];
   pokemonBySlug: Map<string, BuilderRefPokemon>;
 }) {
@@ -419,9 +505,16 @@ function ConfigPanel({
   });
 
   return (
-    <aside className="sticky top-24 self-start space-y-4 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex items-start gap-3">
-        <Image src={p.spriteUrl} alt={p.name} width={60} height={60} unoptimized />
+    <section className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:p-5">
+      <div className="flex flex-wrap items-start gap-3 sm:items-center">
+        <Image
+          src={p.spriteUrl}
+          alt={p.name}
+          width={60}
+          height={60}
+          className="shrink-0"
+          unoptimized
+        />
         <div className="min-w-0 flex-1">
           <div className="truncate text-lg font-bold">{p.name}</div>
           <div className="mt-1 flex gap-1">
@@ -429,174 +522,185 @@ function ConfigPanel({
             {p.type2 ? <TypeChip type={p.type2 as PokemonType} size="sm" /> : null}
           </div>
         </div>
-        <button
-          onClick={reset}
-          className="rounded-md p-1 text-xs text-zinc-400 hover:text-red-600"
-          title={t("changeSpecies")}
-        >
-          ✕
-        </button>
-      </div>
-
-      <SaveMyPokemonButton
-        variant="pill"
-        mon={{
-          slug: build.slug,
-          name: p.name,
-          spriteUrl: p.spriteUrl,
-          type1: p.type1,
-          type2: p.type2,
-          ability: build.ability,
-          abilityName: abilityBySlug.get(build.ability)?.name ?? build.ability,
-          item: build.item,
-          itemName: build.item ? (itemBySlug.get(build.item)?.name ?? build.item) : "",
-          nature: build.nature,
-          moves: build.moves,
-          moveNames: build.moves.map((m) => (m ? (moveBySlug.get(m)?.name ?? m) : "")),
-          ev: build.ev,
-        }}
-      />
-
-      {/* Switch species */}
-      <div>
-        <Label>{t("species")}</Label>
-        <Combobox
-          value={build.slug}
-          onChange={(slug) => {
-            const np = pokemonBySlug.get(slug);
-            if (!np) return;
-            // Re-auto-fill from the new species' usage data
-            const u = np.usage;
-            const valid = new Set([...np.abilities, ...(np.hiddenAbility ? [np.hiddenAbility] : [])]);
-            const topAb = u?.topAbilities.find((a) => valid.has(a.slug))?.slug;
-            const topIt = u?.topItems[0]?.slug ?? "";
-            const lset = new Set(np.learnableMoves);
-            const tm: string[] = [];
-            for (const m of u?.topMoves ?? []) {
-              if (!lset.has(m.slug)) continue;
-              tm.push(m.slug);
-              if (tm.length === 4) break;
-            }
-            while (tm.length < 4) tm.push("");
-            const sp = u?.topSpreads[0];
-            setBuild({
-              slug,
-              ability: topAb ?? np.abilities[0] ?? "",
-              item: topIt,
-              nature: (sp?.nature ?? "Adamant") as Nature,
-              moves: tm,
-              ev: (sp?.vp ?? [0, 0, 0, 0, 0, 0]) as Build["ev"],
-              stages: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
-            });
-          }}
-          options={pickerOptions}
-        />
-      </div>
-
-      <div>
-        <Label>{t("ability")}</Label>
-        <Combobox
-          value={build.ability}
-          onChange={(v) => update((b) => ({ ...b, ability: v }))}
-          options={abilityOptions}
-        />
-      </div>
-
-      <div>
-        <Label>{t("item")}</Label>
-        <Combobox
-          value={build.item}
-          onChange={(v) => update((b) => ({ ...b, item: v }))}
-          options={itemOptions}
-          allowClear
-        />
-      </div>
-
-      <div>
-        <Label>{t("nature")}</Label>
-        <Combobox
-          value={build.nature}
-          onChange={(v) => update((b) => ({ ...b, nature: v as Nature }))}
-          options={natureOptions}
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <Label>{t("moves")}</Label>
-        {[0, 1, 2, 3].map((i) => (
-          <Combobox
-            key={i}
-            value={build.moves[i] ?? ""}
-            onChange={(v) => update((b) => {
-              const m = [...b.moves];
-              m[i] = v;
-              return { ...b, moves: m };
-            })}
-            options={moveOptions}
-            placeholder={`${t("moveSlot")} ${i + 1}`}
-            allowClear
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <SaveMyPokemonButton
+            variant="pill"
+            className="w-full whitespace-nowrap sm:w-auto"
+            mon={{
+              slug: build.slug,
+              name: p.name,
+              spriteUrl: p.spriteUrl,
+              type1: p.type1,
+              type2: p.type2,
+              ability: build.ability,
+              abilityName: abilityBySlug.get(build.ability)?.name ?? build.ability,
+              item: build.item,
+              itemName: build.item ? (itemBySlug.get(build.item)?.name ?? build.item) : "",
+              nature: build.nature,
+              moves: build.moves,
+              moveNames: build.moves.map((m) => (m ? (moveBySlug.get(m)?.name ?? m) : "")),
+              ev: build.ev,
+            }}
           />
-        ))}
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between text-xs">
-          <Label>{t("evs")}</Label>
-          <span
-            className={cn(
-              "font-mono tabular-nums",
-              remaining < 0 ? "font-bold text-red-600"
-              : remaining === 0 ? "text-emerald-600"
-              : "text-zinc-500",
-            )}
+          <button
+            type="button"
+            onClick={reset}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-zinc-200 text-sm text-zinc-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-zinc-700 dark:hover:border-red-900 dark:hover:bg-red-950/30 dark:hover:text-red-300"
+            title={t("changeSpecies")}
+            aria-label={t("changeSpecies")}
           >
-            {remaining < 0 ? `+${-remaining} ${t("over")}` : `${remaining} ${t("left")}`}
-          </span>
-        </div>
-        <div className="mt-1 grid grid-cols-2 gap-1.5 text-xs">
-          {STAT_KEYS.map((k, i) => (
-            <label key={k} className="flex items-center gap-1.5">
-              <span className="w-10 shrink-0 font-semibold uppercase text-zinc-500">
-                {tStat(k as StatKey)}
-              </span>
-              <input
-                type="number"
-                min={0}
-                max={PER_STAT_CAP}
-                step={1}
-                value={ev[i] ?? 0}
-                onChange={(e) => update((b) => {
-                  const v = Math.max(0, Math.min(PER_STAT_CAP, parseInt(e.target.value) || 0));
-                  const next = [...b.ev] as Build["ev"];
-                  next[i] = v;
-                  return { ...b, ev: next };
-                })}
-                className="w-full rounded-md border border-zinc-300 bg-white px-1.5 py-0.5 text-right font-mono tabular-nums dark:border-zinc-700 dark:bg-zinc-900"
-              />
-            </label>
-          ))}
+            ✕
+          </button>
         </div>
       </div>
 
-      <div>
-        <Label>{t("stages")}</Label>
-        <div className="mt-1 grid grid-cols-2 gap-1.5 text-xs">
-          {(["atk","def","spa","spd","spe"] as const).map((k) => (
-            <label key={k} className="flex items-center gap-1.5">
-              <span className="w-10 shrink-0 font-semibold uppercase text-zinc-500">
-                {tStat(k as StatKey)}
-              </span>
-              <Stepper
-                value={build.stages[k]}
-                min={-6}
-                max={6}
-                onChange={(v) => update((b) => ({ ...b, stages: { ...b.stages, [k]: v } }))}
+      <div className="mt-5 grid gap-5 lg:grid-cols-3">
+        <div className="space-y-4">
+          <div>
+            <Label>{t("species")}</Label>
+            <Combobox
+              value={build.slug}
+              onChange={(slug) => {
+                const np = pokemonBySlug.get(slug);
+                if (!np) return;
+                // Re-auto-fill from the new species' usage data
+                const u = np.usage;
+                const valid = new Set([...np.abilities, ...(np.hiddenAbility ? [np.hiddenAbility] : [])]);
+                const topAb = u?.topAbilities.find((a) => valid.has(a.slug))?.slug;
+                const topIt = u?.topItems[0]?.slug ?? "";
+                const lset = new Set(np.learnableMoves);
+                const tm: string[] = [];
+                for (const m of u?.topMoves ?? []) {
+                  if (!lset.has(m.slug)) continue;
+                  tm.push(m.slug);
+                  if (tm.length === 4) break;
+                }
+                while (tm.length < 4) tm.push("");
+                const sp = u?.topSpreads[0];
+                setBuild({
+                  slug,
+                  ability: topAb ?? np.abilities[0] ?? "",
+                  item: topIt,
+                  nature: (sp?.nature ?? "Adamant") as Nature,
+                  moves: tm,
+                  ev: (sp?.vp ?? [0, 0, 0, 0, 0, 0]) as Build["ev"],
+                  stages: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+                });
+              }}
+              options={pickerOptions}
+            />
+          </div>
+
+          <div>
+            <Label>{t("ability")}</Label>
+            <Combobox
+              value={build.ability}
+              onChange={(v) => update((b) => ({ ...b, ability: v }))}
+              options={abilityOptions}
+            />
+          </div>
+
+          <div>
+            <Label>{t("item")}</Label>
+            <Combobox
+              value={build.item}
+              onChange={(v) => update((b) => ({ ...b, item: v }))}
+              options={itemOptions}
+              allowClear
+            />
+          </div>
+
+          <div>
+            <Label>{t("nature")}</Label>
+            <Combobox
+              value={build.nature}
+              onChange={(v) => update((b) => ({ ...b, nature: v as Nature }))}
+              options={natureOptions}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>{t("moves")}</Label>
+          <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            {[0, 1, 2, 3].map((i) => (
+              <Combobox
+                key={i}
+                value={build.moves[i] ?? ""}
+                onChange={(v) => update((b) => {
+                  const m = [...b.moves];
+                  m[i] = v;
+                  return { ...b, moves: m };
+                })}
+                options={moveOptions}
+                placeholder={`${t("moveSlot")} ${i + 1}`}
+                allowClear
               />
-            </label>
-          ))}
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <div className="flex items-center justify-between text-xs">
+              <Label>{t("evs")}</Label>
+              <span
+                className={cn(
+                  "font-mono tabular-nums",
+                  remaining < 0 ? "font-bold text-red-600"
+                  : remaining === 0 ? "text-emerald-600"
+                  : "text-zinc-500",
+                )}
+              >
+                {remaining < 0 ? `+${-remaining} ${t("over")}` : `${remaining} ${t("left")}`}
+              </span>
+            </div>
+            <div className="mt-1 grid grid-cols-2 gap-1.5 text-xs">
+              {STAT_KEYS.map((k, i) => (
+                <label key={k} className="flex items-center gap-1.5">
+                  <span className="w-10 shrink-0 font-semibold uppercase text-zinc-500">
+                    {tStat(k as StatKey)}
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={PER_STAT_CAP}
+                    step={1}
+                    value={ev[i] ?? 0}
+                    onChange={(e) => update((b) => {
+                      const v = Math.max(0, Math.min(PER_STAT_CAP, parseInt(e.target.value) || 0));
+                      const next = [...b.ev] as Build["ev"];
+                      next[i] = v;
+                      return { ...b, ev: next };
+                    })}
+                    className="w-full rounded-md border border-zinc-300 bg-white px-1.5 py-0.5 text-right font-mono tabular-nums dark:border-zinc-700 dark:bg-zinc-900"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <Label>{t("stages")}</Label>
+            <div className="mt-1 grid grid-cols-2 gap-1.5 text-xs">
+              {(["atk","def","spa","spd","spe"] as const).map((k) => (
+                <label key={k} className="flex items-center gap-1.5">
+                  <span className="w-10 shrink-0 font-semibold uppercase text-zinc-500">
+                    {tStat(k as StatKey)}
+                  </span>
+                  <Stepper
+                    value={build.stages[k]}
+                    min={-6}
+                    max={6}
+                    onChange={(v) => update((b) => ({ ...b, stages: { ...b.stages, [k]: v } }))}
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
-    </aside>
+    </section>
   );
 }
 
@@ -809,13 +913,11 @@ function OffenseMatrixCard({
   build,
   targets,
   moveBySlug,
-  pokemonBySlug,
 }: {
   p: BuilderRefPokemon;
   build: Build;
   targets: BuilderRefPokemon[];
   moveBySlug: Map<string, BuilderRefMove>;
-  pokemonBySlug: Map<string, BuilderRefPokemon>;
 }) {
   const t = useTranslations("PokemonBuilder");
 
