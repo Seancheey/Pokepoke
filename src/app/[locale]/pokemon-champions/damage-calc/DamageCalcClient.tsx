@@ -342,6 +342,7 @@ export function DamageCalcClient({
       {/* Headline result — % of defender HP, large and obvious. */}
       <ResultHero
         result={result} move={move} attacker={attackerMon} defender={defenderMon}
+        defenderHpPct={def.hpPct}
       />
 
       {/* Field strip */}
@@ -824,12 +825,13 @@ function CheckChip({
 // ─── Result hero: the headline % of defender HP, large + obvious ─────────────
 
 function ResultHero({
-  result, move, attacker, defender,
+  result, move, attacker, defender, defenderHpPct,
 }: {
   result: CalcOutput | null;
   move: CalcRefMove | undefined;
   attacker: CalcRefPokemon | undefined;
   defender: CalcRefPokemon | undefined;
+  defenderHpPct: number;
 }) {
   const t = useTranslations("DamageCalc");
 
@@ -844,36 +846,30 @@ function ResultHero({
     );
   }
 
-  // Compute KO chance from current HP, not from full HP.
-  // hpPct is already baked into the caller's defender side; pull it back via
-  // the rolls + defender max HP. Roll values are absolute damage numbers.
-  // The damage calc doesn't surface defender hpPct, so we trust the existing
-  // result range and tone by lethality at 100% HP for the badge color, then
-  // count rolls >= the actually-current HP to compute "% chance to KO".
-  // Note: this matches Pikalytics/Showdown convention.
+  // KO chance is computed against the defender's *current* HP — not max.
+  // If the defender is at 22% HP and we deal 60-70% damage, every roll
+  // exceeds the remaining 22% HP, so it's a guaranteed KO.
+  const currentHp = Math.max(
+    1,
+    Math.floor((result.defenderMaxHp * defenderHpPct) / 100),
+  );
   const koPct = (() => {
     if (result.effectiveness === 0) return 0;
     if (result.max <= 0) return 0;
-    // hpPct lives on the defender state in the parent; the result.defenderMaxHp
-    // here is already the full HP. We approximate current HP from min/max:
-    // the parent passes hpPct into calc, which doesn't propagate it out, so
-    // we count rolls that fully reach max HP. For "X% to KO at current HP",
-    // we'd need defender.hpPct propagated — accept full-HP semantics here.
-    const targetHp = result.defenderMaxHp;
-    const koRolls = result.rolls.filter((r) => r >= targetHp).length;
+    const koRolls = result.rolls.filter((r) => r >= currentHp).length;
     return Math.round((koRolls / Math.max(1, result.rolls.length)) * 100);
   })();
 
-  // Tone for the % range. ≥100% guaranteed KO from full = red. Half = orange.
-  // <half = amber. Immune / no damage = zinc.
+  // Tone by KO chance at the defender's *current* HP. Guaranteed KO → red,
+  // possible KO → orange/amber, won't KO but still hits → muted, immune → zinc.
   const heroTone =
     result.effectiveness === 0 || result.max === 0
       ? "from-zinc-200 to-zinc-100 text-zinc-500 dark:from-zinc-800 dark:to-zinc-900"
-      : result.minPct >= 100
+      : koPct >= 100
       ? "from-red-600 to-red-500 text-white"
-      : result.maxPct >= 100
+      : koPct >= 50
       ? "from-orange-500 to-amber-400 text-white"
-      : result.maxPct >= 50
+      : koPct > 0
       ? "from-amber-300 to-yellow-200 text-amber-900 dark:from-amber-500 dark:to-amber-400 dark:text-amber-950"
       : "from-zinc-100 to-white text-zinc-800 dark:from-zinc-800 dark:to-zinc-900 dark:text-zinc-200";
 
