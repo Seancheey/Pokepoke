@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Hide the My-Pokémon FAB while the mobile drawer is open so it doesn't
+   overlap the drawer's bottom controls. MobileMenu toggles the attribute. */
+body[data-menu-open] .pokedd-fab {
+  display: none;
+}

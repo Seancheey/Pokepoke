@@ -31,7 +31,10 @@ export function MyPokemonFAB() {
   if (!hydrated) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 z-50">
+    // pokedd-fab class lets a CSS rule in globals.css hide this while the
+    // mobile drawer is open (body[data-menu-open]) — avoids stacking-context
+    // battles on small screens.
+    <div className="pokedd-fab fixed bottom-4 left-4 z-50">
       {open ? (
         <Panel
           items={items}
