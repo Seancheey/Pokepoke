@@ -8,6 +8,8 @@ import { TypeChip } from "@/components/TypeChip";
 import { Combobox, type ComboboxOption } from "@/components/Combobox";
 import type { PokemonType } from "@/lib/types";
 import { POKEMON_TYPES } from "@/lib/types";
+import { NATURES, natureEffect, type Nature } from "@/lib/damage";
+import { parseShowdownText, type LookupSets, type ImportWarning } from "@/lib/showdown-import";
 import { defensiveEffectivenessAgainst, effectivenessAgainst } from "@/lib/type-chart";
 import {
   encodeTeam,
@@ -103,7 +105,57 @@ export function TeamBuilderClient({
   const [team, setTeam] = useState<TeamShare>(initialTeam ?? EMPTY_TEAM);
   const [hydrated, setHydrated] = useState(initialTeam != null);
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
+  const [importOpen, setImportOpen] = useState(false);
+
+  // Show the first-time "save your build" tooltip once, then never again.
+  // The flag is stored client-side, so we only flip it true after hydration
+  // (otherwise SSR would render the hint and hydration would tear).
+  const [showSaveHint, setShowSaveHint] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const dismissed =
+        window.localStorage.getItem("pokedd:save-hint-dismissed") === "1";
+      if (!dismissed && team.slots.length === 1) {
+        setShowSaveHint(true);
+      } else if (team.slots.length !== 1) {
+        setShowSaveHint(false);
+      }
+    } catch {
+      /* localStorage disabled — skip the hint */
+    }
+  }, [team.slots.length]);
+  function dismissSaveHint() {
+    setShowSaveHint(false);
+    try {
+      window.localStorage.setItem("pokedd:save-hint-dismissed", "1");
+    } catch {
+      /* ignore */
+    }
+  }
   const [_isPending, startTransition] = useTransition();
+
+  // Lookup sets for the Showdown importer. Built once from the same reference
+  // data the slot pickers already use. Memoized so the modal can re-mount
+  // without rebuilding 1.3K slug entries each time.
+  const importLookup: LookupSets = useMemo(() => {
+    const learnableBySpecies = new Map<string, Set<string>>();
+    const validAbilitiesBySpecies = new Map<string, Set<string>>();
+    for (const p of pokemon) {
+      learnableBySpecies.set(p.slug, new Set(p.learnableMoves));
+      const abs = new Set<string>(p.abilities);
+      if (p.hiddenAbility) abs.add(p.hiddenAbility);
+      validAbilitiesBySpecies.set(p.slug, abs);
+    }
+    return {
+      speciesSlugs: new Set(pokemon.map((p) => p.slug)),
+      moveSlugs: new Set(moves.map((m) => m.slug)),
+      abilitySlugs: new Set(abilities.map((a) => a.slug)),
+      itemSlugs: new Set(items.map((i) => i.slug)),
+      learnableBySpecies,
+      validAbilitiesBySpecies,
+    };
+  }, [pokemon, moves, abilities, items]);
 
   // If we landed without a pre-decoded team but a `?share=` is present (e.g. client-side
   // route change), decode on mount.
@@ -235,7 +287,13 @@ export function TeamBuilderClient({
           <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{t("title")}</h1>
           <p className="mt-1 text-sm text-zinc-500">{t("subtitle")}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setImportOpen(true)}
+            className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+          >
+            {t("import")}
+          </button>
           <button
             onClick={copyShare}
             className="rounded-md bg-zinc-950 px-4 py-1.5 text-sm font-semibold text-white shadow hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
@@ -274,10 +332,17 @@ export function TeamBuilderClient({
             items={items}
             onMutate={(mut) => updateSlot(i, mut)}
             onRemove={() => removeSlot(i)}
+            showSaveHint={i === 0 && showSaveHint}
+            onDismissSaveHint={dismissSaveHint}
           />
         ))}
         {team.slots.length < 6 ? (
-          <AddSlotPicker pokemon={pokemon} onPick={addSlot} />
+          <AddSlotPicker
+            pokemon={pokemon}
+            moves={moves}
+            abilities={abilities}
+            onPick={addSlot}
+          />
         ) : null}
       </section>
 
@@ -292,6 +357,28 @@ export function TeamBuilderClient({
           />
         </div>
       ) : null}
+
+      {importOpen ? (
+        <ImportModal
+          lookup={importLookup}
+          pokemonBySlug={pokemonBySlug}
+          currentSlotCount={team.slots.length}
+          onClose={() => setImportOpen(false)}
+          onApply={(parsed, mode) => {
+            setTeam((prev) => {
+              if (mode === "replace") {
+                return { ...prev, slots: parsed.slots.slice(0, 6) };
+              }
+              const room = 6 - prev.slots.length;
+              return {
+                ...prev,
+                slots: [...prev.slots, ...parsed.slots.slice(0, room)],
+              };
+            });
+            setImportOpen(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -300,16 +387,64 @@ export function TeamBuilderClient({
 
 function AddSlotPicker({
   pokemon,
+  moves,
+  abilities,
   onPick,
 }: {
   pokemon: RefPokemon[];
+  moves: RefMove[];
+  abilities: RefAbility[];
   onPick: (slug: string) => void;
 }) {
   const t = useTranslations("TeamBuilder");
+  const tType = useTranslations("Types");
+
+  // Filter state — all start empty (no filtering).
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<Set<PokemonType>>(new Set());
+  const [moveFilter, setMoveFilter] = useState<string>("");
+  const [abilityFilter, setAbilityFilter] = useState<string>("");
+
+  function toggleType(tp: PokemonType) {
+    setTypeFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(tp)) next.delete(tp);
+      else next.add(tp);
+      return next;
+    });
+  }
+  function clearFilters() {
+    setTypeFilter(new Set());
+    setMoveFilter("");
+    setAbilityFilter("");
+  }
+  const anyFilter =
+    typeFilter.size > 0 || moveFilter !== "" || abilityFilter !== "";
+
+  // Apply filters with AND semantics.
+  const filteredPokemon = useMemo(() => {
+    if (!anyFilter) return pokemon;
+    return pokemon.filter((p) => {
+      if (typeFilter.size > 0) {
+        const t1 = p.type1 as PokemonType;
+        const t2 = (p.type2 ?? null) as PokemonType | null;
+        const matches = typeFilter.has(t1) || (t2 != null && typeFilter.has(t2));
+        if (!matches) return false;
+      }
+      if (moveFilter && !p.learnableMoves.includes(moveFilter)) return false;
+      if (abilityFilter) {
+        const valid =
+          p.abilities.includes(abilityFilter) ||
+          p.hiddenAbility === abilityFilter;
+        if (!valid) return false;
+      }
+      return true;
+    });
+  }, [pokemon, typeFilter, moveFilter, abilityFilter, anyFilter]);
 
   const options: ComboboxOption[] = useMemo(
     () =>
-      pokemon.map((p) => ({
+      filteredPokemon.map((p) => ({
         value: p.slug,
         label: p.name,
         searchText: p.slug, // allow english slug search even when UI is JA / zh
@@ -331,15 +466,123 @@ function AddSlotPicker({
           </span>
         ),
       })),
-    [pokemon],
+    [filteredPokemon],
+  );
+
+  const moveOptions: ComboboxOption[] = useMemo(
+    () =>
+      moves.map((m) => ({
+        value: m.slug,
+        label: m.name,
+        searchText: m.slug,
+      })),
+    [moves],
+  );
+  const abilityOptions: ComboboxOption[] = useMemo(
+    () =>
+      abilities.map((a) => ({
+        value: a.slug,
+        label: a.name,
+        searchText: a.slug,
+      })),
+    [abilities],
   );
 
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-zinc-300 bg-white/60 p-6 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
+    <div className="flex flex-col items-stretch justify-center gap-3 rounded-2xl border-2 border-dashed border-zinc-300 bg-white/60 p-6 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
       <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">
         {t("addPokemon")}
       </p>
-      <div className="w-full max-w-md">
+
+      {/* Filters: collapsed by default. Toggle via the chip; "Clear" pops up
+          alongside whenever any filter is active. */}
+      <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+        <button
+          type="button"
+          onClick={() => setFilterOpen((v) => !v)}
+          className={cn(
+            "rounded-full border px-2.5 py-0.5 font-semibold transition-colors",
+            anyFilter
+              ? "border-amber-400 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+              : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300",
+          )}
+        >
+          {t("advancedFilter")}
+          {anyFilter ? ` (${filteredPokemon.length})` : ""}
+        </button>
+        {anyFilter ? (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="rounded-full border border-zinc-300 bg-white px-2.5 py-0.5 font-semibold text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+          >
+            {t("advancedFilterClear")}
+          </button>
+        ) : null}
+      </div>
+
+      {filterOpen ? (
+        <div className="space-y-2 rounded-md border border-zinc-200 bg-white p-3 text-left dark:border-zinc-800 dark:bg-zinc-900">
+          <div>
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+              {t("advancedFilterType")}
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {POKEMON_TYPES.map((tp) => {
+                const active = typeFilter.has(tp);
+                let label: string;
+                try {
+                  label = tType(tp as never);
+                } catch {
+                  label = tp;
+                }
+                return (
+                  <button
+                    key={tp}
+                    type="button"
+                    onClick={() => toggleType(tp)}
+                    aria-pressed={active}
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[11px] font-semibold transition-opacity",
+                      active ? "opacity-100" : "opacity-40 hover:opacity-80",
+                    )}
+                  >
+                    <TypeChip type={tp} size="sm" />
+                    <span className="sr-only">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Field label={t("advancedFilterMove")}>
+              <Combobox
+                value={moveFilter}
+                options={moveOptions}
+                onChange={(v) => setMoveFilter(v)}
+                ariaLabel={t("advancedFilterMove")}
+                allowClear
+                emptyLabel="—"
+                placeholder="—"
+              />
+            </Field>
+            <Field label={t("advancedFilterAbility")}>
+              <Combobox
+                value={abilityFilter}
+                options={abilityOptions}
+                onChange={(v) => setAbilityFilter(v)}
+                ariaLabel={t("advancedFilterAbility")}
+                allowClear
+                emptyLabel="—"
+                placeholder="—"
+              />
+            </Field>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mx-auto w-full max-w-md">
         <Combobox
           value=""
           options={options}
@@ -366,6 +609,8 @@ function SlotCard({
   items,
   onMutate,
   onRemove,
+  showSaveHint,
+  onDismissSaveHint,
 }: {
   index: number;
   slot: ShareSlot;
@@ -377,6 +622,8 @@ function SlotCard({
   items: RefItem[];
   onMutate: (mut: (s: ShareSlot) => ShareSlot) => void;
   onRemove: () => void;
+  showSaveHint?: boolean;
+  onDismissSaveHint?: () => void;
 }) {
   const t = useTranslations("TeamBuilder");
   const tStat = useTranslations("TeamBuilder.evStat");
@@ -427,14 +674,19 @@ function SlotCard({
             {p.type2 ? <TypeChip type={p.type2 as PokemonType} size="sm" /> : null}
           </div>
         </div>
-        <SaveToMyPokemon
-          slot={slot}
-          ev={ev}
-          species={p}
-          abilityBySlug={abilityBySlug}
-          itemBySlug={itemBySlug}
-          moveBySlug={moveBySlug}
-        />
+        <div className="relative">
+          <SaveToMyPokemon
+            slot={slot}
+            ev={ev}
+            species={p}
+            abilityBySlug={abilityBySlug}
+            itemBySlug={itemBySlug}
+            moveBySlug={moveBySlug}
+          />
+          {showSaveHint ? (
+            <SaveHintBubble onDismiss={onDismissSaveHint ?? (() => {})} />
+          ) : null}
+        </div>
         <button
           onClick={onRemove}
           aria-label={t("remove")}
@@ -491,6 +743,7 @@ function SlotBody({
   const t = useTranslations("TeamBuilder");
   const tStat = useTranslations("TeamBuilder.evStat");
   const tNature = useTranslations("Natures");
+  const tType = useTranslations("Types");
 
   // Per-slot usage lookups (top moves/abilities/items/spreads with %)
   const pctByMove = new Map(p.usage?.topMoves.map((m) => [m.slug, m.pct]) ?? []);
@@ -555,9 +808,45 @@ function SlotBody({
     if (parts.length !== 6) return;
     onMutate((s) => ({
       ...s,
+      n: nature,
       v: parts as [number, number, number, number, number, number],
     }));
   }
+
+  // Nature picker — 25 standard natures, with +/- stat hint in the label.
+  const natureOptions: ComboboxOption[] = NATURES.map((nat) => {
+    const eff = natureEffect(nat as Nature);
+    let label: string;
+    try {
+      label = tNature(nat as never);
+    } catch {
+      label = nat;
+    }
+    const hint = eff.up && eff.down
+      ? `+${tStat(eff.up as StatKey)} −${tStat(eff.down as StatKey)}`
+      : t("natureNeutral");
+    return {
+      value: nat,
+      label: `${label} ${hint}`,
+      searchText: nat,
+    };
+  });
+
+  // Tera type — all 18 types, localized.
+  const teraOptions: ComboboxOption[] = POKEMON_TYPES.map((tp) => {
+    let label: string;
+    try {
+      label = tType(tp as never);
+    } catch {
+      label = tp;
+    }
+    return {
+      value: tp,
+      label,
+      searchText: tp,
+      prefix: <TypeChip type={tp} size="sm" />,
+    };
+  });
 
   return (
     <div className="mt-3 space-y-2 text-sm">
@@ -617,6 +906,32 @@ function SlotBody({
             );
           })}
         </div>
+      </div>
+
+      {/* Nature + Tera — two-column row */}
+      <div className="grid grid-cols-2 gap-2">
+        <Field label={t("natureLabel")}>
+          <Combobox
+            value={slot.n ?? ""}
+            options={natureOptions}
+            onChange={(v) => onMutate((s) => ({ ...s, n: v || undefined }))}
+            ariaLabel={t("natureLabel")}
+            allowClear
+            emptyLabel={t("natureNeutral")}
+            placeholder={t("natureNeutral")}
+          />
+        </Field>
+        <Field label={t("teraLabel")}>
+          <Combobox
+            value={slot.t ?? ""}
+            options={teraOptions}
+            onChange={(v) => onMutate((s) => ({ ...s, t: v || undefined }))}
+            ariaLabel={t("teraLabel")}
+            allowClear
+            emptyLabel="—"
+            placeholder="—"
+          />
+        </Field>
       </div>
 
       {/* Spread preset */}
@@ -945,15 +1260,300 @@ function SaveToMyPokemon({
         abilityName: ability ? (abilityBySlug.get(ability)?.name ?? ability) : "",
         item,
         itemName: item ? (itemBySlug.get(item)?.name ?? item) : "",
-        // Team Builder doesn't track nature explicitly per slot today; the
-        // Smogon-derived spread preset is applied to the EV array but the
-        // nature isn't echoed back into the share format. Default to Hardy
-        // (neutral) — user can edit if loaded into Pokémon Builder later.
-        nature: "Hardy",
+        nature: slot.n ?? "Hardy",
         moves,
         moveNames: moves.map((m) => (m ? (moveBySlug.get(m)?.name ?? m) : "")),
         ev: [ev[0] ?? 0, ev[1] ?? 0, ev[2] ?? 0, ev[3] ?? 0, ev[4] ?? 0, ev[5] ?? 0],
       }}
     />
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// First-time-only hint that appears next to the ★ save button after the user
+// adds their first Pokémon. Dismissed permanently via localStorage flag in the
+// parent so it never reappears across sessions.
+
+function SaveHintBubble({ onDismiss }: { onDismiss: () => void }) {
+  const t = useTranslations("TeamBuilder");
+  return (
+    <div
+      role="dialog"
+      aria-label={t("saveHintTitle")}
+      className="absolute right-0 top-full z-30 mt-2 w-64 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs shadow-lg dark:border-amber-700 dark:bg-amber-950/80"
+    >
+      <div
+        className="absolute -top-1.5 right-3 h-3 w-3 rotate-45 border-l border-t border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950"
+        aria-hidden
+      />
+      <p className="font-semibold text-amber-900 dark:text-amber-200">
+        {t("saveHintTitle")}
+      </p>
+      <p className="mt-1 text-amber-800 dark:text-amber-300">{t("saveHintBody")}</p>
+      <div className="mt-2 flex justify-end">
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="rounded-md bg-amber-600 px-2 py-0.5 text-xs font-semibold text-white hover:bg-amber-700"
+        >
+          {t("saveHintDismiss")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Showdown / PokePaste import modal
+
+function ImportModal({
+  lookup,
+  pokemonBySlug,
+  currentSlotCount,
+  onClose,
+  onApply,
+}: {
+  lookup: LookupSets;
+  pokemonBySlug: Map<string, RefPokemon>;
+  currentSlotCount: number;
+  onClose: () => void;
+  onApply: (team: TeamShare, mode: "replace" | "append") => void;
+}) {
+  const t = useTranslations("TeamBuilder");
+  const [text, setText] = useState("");
+  const [url, setUrl] = useState("");
+  const [mode, setMode] = useState<"replace" | "append">(
+    currentSlotCount === 0 ? "replace" : "append",
+  );
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [fetching, setFetching] = useState(false);
+
+  // Parse live as the textarea changes. Cheap (just string ops), so re-running
+  // on every keystroke is fine — keeps the preview honest.
+  const parsed = useMemo(() => {
+    if (!text.trim()) return null;
+    return parseShowdownText(text, lookup);
+  }, [text, lookup]);
+
+  async function fetchPokePaste() {
+    setFetchError(null);
+    setFetching(true);
+    try {
+      const r = await fetch(`/api/pokepaste?url=${encodeURIComponent(url)}`);
+      if (!r.ok) {
+        const body = await r.json().catch(() => null);
+        setFetchError(body?.error ?? t("importErrorFetch"));
+        return;
+      }
+      const body = await r.text();
+      setText(body);
+    } catch {
+      setFetchError(t("importErrorFetch"));
+    } finally {
+      setFetching(false);
+    }
+  }
+
+  const slotsParsed = parsed?.team.slots.length ?? 0;
+  const room = 6 - currentSlotCount;
+  const appendBlocked = mode === "append" && room === 0 && slotsParsed > 0;
+  const applyDisabled = slotsParsed === 0 || appendBlocked;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:p-8"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-3xl rounded-lg bg-white p-5 shadow-2xl dark:bg-zinc-900"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-lg font-bold">{t("importTitle")}</h2>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          {t("importSubtitle")}
+        </p>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_minmax(0,360px)]">
+          <Field label={t("importTextLabel")}>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={t("importTextPlaceholder")}
+              className="h-64 w-full resize-y rounded-md border border-zinc-300 bg-white p-2 font-mono text-xs dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </Field>
+
+          <div className="space-y-3">
+            <Field label={t("importUrlLabel")}>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder={t("importUrlPlaceholder")}
+                  className="min-w-0 flex-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                />
+                <button
+                  type="button"
+                  onClick={fetchPokePaste}
+                  disabled={!url || fetching}
+                  className="rounded-md bg-zinc-950 px-3 py-1 text-sm font-semibold text-white disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-950"
+                >
+                  {fetching ? "…" : t("importFetch")}
+                </button>
+              </div>
+              {fetchError ? (
+                <p className="mt-1 text-xs text-red-600">{fetchError}</p>
+              ) : null}
+            </Field>
+
+            <Field label={t("importMode")}>
+              <div className="flex flex-col gap-1 text-sm">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    checked={mode === "replace"}
+                    onChange={() => setMode("replace")}
+                  />
+                  {t("importModeReplace")}
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    checked={mode === "append"}
+                    onChange={() => setMode("append")}
+                    disabled={currentSlotCount >= 6}
+                  />
+                  {t("importModeAppend")}
+                  {currentSlotCount > 0 ? (
+                    <span className="text-xs text-zinc-500">
+                      ({Math.max(0, room)} / 6)
+                    </span>
+                  ) : null}
+                </label>
+              </div>
+            </Field>
+          </div>
+        </div>
+
+        {/* Preview */}
+        <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
+          {parsed == null ? (
+            <p className="text-sm text-zinc-500">{t("importPreviewEmpty")}</p>
+          ) : parsed.team.slots.length === 0 ? (
+            <div className="space-y-1 text-sm">
+              <p className="text-zinc-700 dark:text-zinc-300">
+                {t("importNoSlots")}
+              </p>
+              {parsed.warnings.map((w, i) => (
+                <WarningRow key={i} warning={w} />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {parsed.team.slots.map((slot, i) => {
+                const sp = pokemonBySlug.get(slot.s);
+                const slotWarnings = parsed.warnings.filter(
+                  (w) => w.slotIndex === i,
+                );
+                return (
+                  <div
+                    key={i}
+                    className="flex gap-3 rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-900"
+                  >
+                    {sp ? (
+                      <Image
+                        src={sp.spriteUrl}
+                        alt={sp.name}
+                        width={40}
+                        height={40}
+                        unoptimized
+                        className="h-10 w-10 shrink-0 object-contain"
+                      />
+                    ) : null}
+                    <div className="min-w-0 flex-1 text-sm">
+                      <div className="flex flex-wrap items-baseline gap-x-2">
+                        <span className="font-semibold">{sp?.name ?? slot.s}</span>
+                        {slot.i ? (
+                          <span className="text-xs text-zinc-500">
+                            @ {slot.i.replace(/-/g, " ")}
+                          </span>
+                        ) : null}
+                        {slot.t ? (
+                          <span className="text-xs text-zinc-500">
+                            · Tera {slot.t}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-0.5 text-xs text-zinc-500">
+                        {(slot.a ?? "").replace(/-/g, " ")}
+                        {slot.n ? ` · ${slot.n}` : ""}
+                        {slot.v ? ` · SP ${slot.v.join("/")}` : ""}
+                      </div>
+                      <div className="mt-0.5 text-xs text-zinc-500">
+                        {(slot.m ?? []).map((m) => m.replace(/-/g, " ")).join(" · ")}
+                      </div>
+                      {slotWarnings.map((w, wi) => (
+                        <WarningRow key={wi} warning={w} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {/* Warnings unattached to any slot (e.g. unknown-species at index N) */}
+              {parsed.warnings
+                .filter((w) => !parsed.team.slots[w.slotIndex])
+                .map((w, i) => (
+                  <WarningRow key={`orphan-${i}`} warning={w} />
+                ))}
+            </div>
+          )}
+        </div>
+
+        {appendBlocked ? (
+          <p className="mt-2 text-xs text-amber-600">{t("importAppendFull")}</p>
+        ) : null}
+
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            {t("importCancel")}
+          </button>
+          <button
+            type="button"
+            disabled={applyDisabled}
+            onClick={() => parsed && onApply(parsed.team, mode)}
+            className="rounded-md bg-zinc-950 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-950"
+          >
+            {mode === "replace" ? t("importApply") : t("importApplyAppend")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WarningRow({ warning }: { warning: ImportWarning }) {
+  // Tone the chip on severity: hard rejects (unknown / illegal) in red,
+  // lossy conversions (ev / iv / level) in amber.
+  const severe =
+    warning.kind === "unknown-species" ||
+    warning.kind === "unknown-ability" ||
+    warning.kind === "unknown-item" ||
+    warning.kind === "unknown-move" ||
+    warning.kind === "illegal-ability" ||
+    warning.kind === "empty-block";
+  const cls = severe
+    ? "text-red-700 dark:text-red-300"
+    : "text-amber-700 dark:text-amber-300";
+  return (
+    <p className={`mt-0.5 text-[11px] ${cls}`}>
+      <span className="font-mono">⚠</span> {warning.detail}
+    </p>
   );
 }
