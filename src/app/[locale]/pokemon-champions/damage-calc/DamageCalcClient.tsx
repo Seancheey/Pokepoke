@@ -194,6 +194,7 @@ export function DamageCalcClient({
     if (move.category === "status" || move.power <= 0) return null;
     return calc({
       attacker: {
+        slug: attackerMon.slug,
         types: [attackerMon.type1 as PokemonType, attackerMon.type2 as PokemonType | null],
         atk: attackerMon.atk, spa: attackerMon.spa,
         vpAtk: atk.vp[1], vpSpa: atk.vp[3],
@@ -204,6 +205,7 @@ export function DamageCalcClient({
         stageAtk: atk.stageAtk, stageSpa: atk.stageSpa,
       },
       defender: {
+        slug: defenderMon.slug,
         types: [defenderMon.type1 as PokemonType, defenderMon.type2 as PokemonType | null],
         hp: defenderMon.hp, def: defenderMon.def, spd: defenderMon.spd,
         vpHp: def.vp[0], vpDef: def.vp[2], vpSpd: def.vp[4],

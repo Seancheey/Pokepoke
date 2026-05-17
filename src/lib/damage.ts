@@ -231,10 +231,128 @@ function isSound(slug: string): boolean { return SOUND_MOVES.has(slug); }
 function hasSecondary(slug: string): boolean { return SECONDARY_EFFECT_MOVES.has(slug); }
 function isRecoil(slug: string): boolean { return RECOIL_MOVES.has(slug); }
 
+// ─── Item → boosted type tables ──────────────────────────────────────────────
+// Type-enhancing items and plates: ×1.2 to damage when the move type matches.
+// Mirrors Smogon damage calc (TypeEnhancingItems). Applied as a final damage
+// multiplier, not a base-power one — for our integer-floor numbers the two are
+// equivalent within ±1 at typical scales.
+
+const TYPE_BOOST_ITEMS: Record<string, PokemonType> = {
+  // Type-specific items
+  "silk-scarf":     "normal",
+  "charcoal":       "fire",
+  "mystic-water":   "water",
+  "magnet":         "electric",
+  "miracle-seed":   "grass",
+  "never-melt-ice": "ice",
+  "black-belt":     "fighting",
+  "poison-barb":    "poison",
+  "soft-sand":      "ground",
+  "sharp-beak":     "flying",
+  "twisted-spoon":  "psychic",
+  "silver-powder":  "bug",
+  "hard-stone":     "rock",
+  "spell-tag":      "ghost",
+  "dragon-fang":    "dragon",
+  "black-glasses":  "dark",
+  "metal-coat":     "steel",
+  "fairy-feather":  "fairy",
+  // Plates (Arceus + Judgment; +1.2 to held type for any user)
+  "flame-plate":   "fire",
+  "splash-plate":  "water",
+  "zap-plate":     "electric",
+  "meadow-plate":  "grass",
+  "icicle-plate":  "ice",
+  "fist-plate":    "fighting",
+  "toxic-plate":   "poison",
+  "earth-plate":   "ground",
+  "sky-plate":     "flying",
+  "mind-plate":    "psychic",
+  "insect-plate":  "bug",
+  "stone-plate":   "rock",
+  "spooky-plate":  "ghost",
+  "draco-plate":   "dragon",
+  "dread-plate":   "dark",
+  "iron-plate":    "steel",
+  "pixie-plate":   "fairy",
+};
+
+/**
+ * Species-locked orbs / dews / similar gear that boosts specific types by ×1.2
+ * but only when the rightful holder is wielding them.
+ *
+ * Each entry is `{ types, holders }`: any of these types on a move, by any of
+ * those species, yields ×1.2.
+ */
+const SPECIES_TYPE_ORBS: Array<{
+  item: string;
+  types: PokemonType[];
+  holders: Set<string>;
+}> = [
+  {
+    item: "adamant-orb",
+    types: ["dragon", "steel"],
+    holders: new Set(["dialga", "dialga-origin"]),
+  },
+  {
+    item: "lustrous-orb",
+    types: ["dragon", "water"],
+    holders: new Set(["palkia", "palkia-origin"]),
+  },
+  {
+    item: "griseous-orb",
+    types: ["dragon", "ghost"],
+    holders: new Set(["giratina-origin"]),
+  },
+  {
+    item: "soul-dew",
+    types: ["dragon", "psychic"],
+    holders: new Set(["latios", "latias"]),
+  },
+];
+
+/**
+ * Doubles a base offensive stat for the rightful holder.
+ * Light Ball doubles BOTH Atk and SpA for Pikachu.
+ * Thick Club doubles Atk for Cubone/Marowak (incl. Alolan).
+ * Deep Sea Tooth doubles SpA for Clamperl.
+ */
+function speciesStatItem(
+  item: string | undefined,
+  slug: string | undefined,
+  kind: "atk" | "spa",
+): number {
+  if (!item || !slug) return 1;
+  if (item === "light-ball" && slug === "pikachu") return 2;
+  if (item === "thick-club" && (slug === "cubone" || slug === "marowak" || slug === "marowak-alola")) {
+    return kind === "atk" ? 2 : 1;
+  }
+  if (item === "deep-sea-tooth" && slug === "clamperl") {
+    return kind === "spa" ? 2 : 1;
+  }
+  return 1;
+}
+
+/** Defender-side Deep Sea Scale: ×2 SpD for Clamperl. */
+function speciesDefenseItem(
+  item: string | undefined,
+  slug: string | undefined,
+  kind: "def" | "spd",
+): number {
+  if (!item || !slug) return 1;
+  if (item === "deep-sea-scale" && slug === "clamperl") {
+    return kind === "spd" ? 2 : 1;
+  }
+  return 1;
+}
+
 // ─── Inputs / outputs ────────────────────────────────────────────────────────
 
 export type CalcInput = {
   attacker: {
+    /** Species slug — optional; needed only for species-specific items
+     *  (Light Ball / Thick Club / Deep Sea Tooth / Adamant Orb / Soul Dew / …). */
+    slug?: string;
     types: [PokemonType, PokemonType | null];
     atk: number;   // base
     spa: number;   // base
@@ -248,6 +366,7 @@ export type CalcInput = {
     stageSpa: number;
   };
   defender: {
+    slug?: string;
     types: [PokemonType, PokemonType | null];
     hp: number;    // base
     def: number;   // base
@@ -374,6 +493,23 @@ export function calc(input: CalcInput): CalcOutput | null {
   if (a.item === "choice-specs" && !isPhysical) { A = Math.floor(A * 1.5); notes.push("Choice Specs ×1.5 SpA"); }
   if (d.item === "assault-vest" && !isPhysical) { D = Math.floor(D * 1.5); notes.push("Assault Vest ×1.5 SpD"); }
   if (d.item === "eviolite") { D = Math.floor(D * 1.5); notes.push("Eviolite ×1.5"); }
+
+  // Species-specific stat doublers
+  const offMult = speciesStatItem(a.item, a.slug, isPhysical ? "atk" : "spa");
+  if (offMult > 1) { A = Math.floor(A * offMult); notes.push(`${a.item} ×${offMult} ${isPhysical ? "Atk" : "SpA"}`); }
+  const defMult = speciesDefenseItem(d.item, d.slug, isPhysical ? "def" : "spd");
+  if (defMult > 1) { D = Math.floor(D * defMult); notes.push(`${d.item} ×${defMult} ${isPhysical ? "Def" : "SpD"}`); }
+
+  // Huge Power / Pure Power: ×2 Atk
+  if (isPhysical && (a.ability === "huge-power" || a.ability === "pure-power")) {
+    A = Math.floor(A * 2); notes.push(`${a.ability} ×2 Atk`);
+  }
+  // Guts: ×1.5 Atk when statused (and ignores burn drop, handled below)
+  if (isPhysical && a.ability === "guts" && a.status !== "none") {
+    A = Math.floor(A * 1.5); notes.push("Guts ×1.5 Atk");
+  }
+  // Defeatist: halves Atk + SpA below 50% HP — attacker hpPct isn't modeled;
+  // skip until we add it. (Common opponent Archeops doesn't appear in Reg M-A.)
 
   // Hadron Engine (Miraidon): in Electric Terrain, SpA ×1.33
   if (a.ability === "hadron-engine" && field.terrain === "electric" && !isPhysical) {
@@ -549,6 +685,27 @@ export function calc(input: CalcInput): CalcOutput | null {
   }
   if (a.item === "wise-glasses" && !isPhysical) {
     dmg = Math.floor(dmg * 1.1); notes.push("Wise Glasses ×1.1");
+  }
+  // Type-enhancing items + plates: ×1.2 when the move type matches.
+  if (a.item && TYPE_BOOST_ITEMS[a.item] === moveType) {
+    dmg = Math.floor(dmg * 1.2);
+    notes.push(`${a.item} ×1.2 ${moveType}`);
+  }
+  // Species-locked orbs / Soul Dew: ×1.2 on matching type for matching species.
+  if (a.item && a.slug) {
+    for (const orb of SPECIES_TYPE_ORBS) {
+      if (orb.item === a.item && orb.holders.has(a.slug) && orb.types.includes(moveType)) {
+        dmg = Math.floor(dmg * 1.2);
+        notes.push(`${a.item} ×1.2 ${moveType}`);
+        break;
+      }
+    }
+  }
+  // Punching Glove: ×1.1 to punching moves (and removes contact, which we
+  // don't otherwise model side-effects of, so it's pure damage here).
+  if (a.item === "punching-glove" && isPunch(move.slug)) {
+    dmg = Math.floor(dmg * 1.1);
+    notes.push("Punching Glove ×1.1");
   }
 
   // STAB
