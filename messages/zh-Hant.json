@@ -276,7 +276,14 @@
     "confirmClear": "確定要刪除全部已儲存的寶可夢嗎？此操作無法復原。",
     "close": "關閉",
     "clickToLoad": "點擊可載入至當前構築頁面",
-    "noItem": "無道具"
+    "noItem": "無道具",
+    "dupTitle": "重複的寶可夢",
+    "dupMessage": "已經儲存過 {name}。要覆蓋原配置、另存為副本，還是取消？",
+    "dupExisting": "已有",
+    "dupIncoming": "新增",
+    "dupReplace": "覆蓋原配置",
+    "dupSaveAnyway": "另存為副本",
+    "dupCancel": "取消"
   },
   "PokemonBuilder": {
     "title": "寶可夢構築",

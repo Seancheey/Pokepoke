@@ -276,7 +276,14 @@
     "confirmClear": "确定要删除全部已保存的宝可梦吗？此操作无法撤销。",
     "close": "关闭",
     "clickToLoad": "点击可载入到当前构筑页面",
-    "noItem": "无道具"
+    "noItem": "无道具",
+    "dupTitle": "重复的宝可梦",
+    "dupMessage": "已经保存过 {name}。要覆盖原配置、另存为副本，还是取消？",
+    "dupExisting": "已有",
+    "dupIncoming": "新增",
+    "dupReplace": "覆盖原配置",
+    "dupSaveAnyway": "另存为副本",
+    "dupCancel": "取消"
   },
   "PokemonBuilder": {
     "title": "宝可梦构筑",

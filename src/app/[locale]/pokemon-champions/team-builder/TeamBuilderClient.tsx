@@ -17,7 +17,8 @@ import {
   type ShareSlot,
 } from "@/lib/team-share";
 import { cn } from "@/lib/cn";
-import { addSavedMon, onLoadSavedMon } from "@/lib/my-pokemon";
+import { onLoadSavedMon } from "@/lib/my-pokemon";
+import { SaveMyPokemonButton } from "@/components/SaveMyPokemonButton";
 
 export type RefPokemon = {
   slug: string;
@@ -909,42 +910,25 @@ function SaveToMyPokemon({
   ev: number[];
   species: RefPokemon;
 }) {
-  const tMy = useTranslations("MyPokemon");
-  const [savedToast, setSavedToast] = useState(false);
-  function onClick() {
-    addSavedMon({
-      slug: slot.s,
-      name: species.name,
-      spriteUrl: species.spriteUrl,
-      type1: species.type1,
-      type2: species.type2,
-      ability: slot.a ?? "",
-      item: slot.i ?? "",
-      // Team Builder doesn't track nature explicitly per slot today; the
-      // Smogon-derived spread preset is applied to the EV array but the
-      // nature isn't echoed back into the share format. Default to Hardy
-      // (neutral) — user can edit if loaded into Pokémon Builder later.
-      nature: "Hardy",
-      moves: [...(slot.m ?? [])].concat(Array(4).fill("")).slice(0, 4),
-      ev: [ev[0] ?? 0, ev[1] ?? 0, ev[2] ?? 0, ev[3] ?? 0, ev[4] ?? 0, ev[5] ?? 0],
-    });
-    setSavedToast(true);
-    setTimeout(() => setSavedToast(false), 1400);
-  }
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={tMy("save")}
-      aria-label={tMy("save")}
-      className={cn(
-        "rounded-md p-1 text-base transition-colors",
-        savedToast
-          ? "text-emerald-600"
-          : "text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:hover:bg-zinc-800",
-      )}
-    >
-      {savedToast ? "✓" : "★"}
-    </button>
+    <SaveMyPokemonButton
+      variant="icon"
+      mon={{
+        slug: slot.s,
+        name: species.name,
+        spriteUrl: species.spriteUrl,
+        type1: species.type1,
+        type2: species.type2,
+        ability: slot.a ?? "",
+        item: slot.i ?? "",
+        // Team Builder doesn't track nature explicitly per slot today; the
+        // Smogon-derived spread preset is applied to the EV array but the
+        // nature isn't echoed back into the share format. Default to Hardy
+        // (neutral) — user can edit if loaded into Pokémon Builder later.
+        nature: "Hardy",
+        moves: [...(slot.m ?? [])].concat(Array(4).fill("")).slice(0, 4),
+        ev: [ev[0] ?? 0, ev[1] ?? 0, ev[2] ?? 0, ev[3] ?? 0, ev[4] ?? 0, ev[5] ?? 0],
+      }}
+    />
   );
 }

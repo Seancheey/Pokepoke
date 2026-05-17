@@ -276,7 +276,14 @@
     "confirmClear": "保存済みのポケモンをすべて削除しますか？元に戻せません。",
     "close": "閉じる",
     "clickToLoad": "クリックすると現在の構築画面に読み込みます",
-    "noItem": "持ち物なし"
+    "noItem": "持ち物なし",
+    "dupTitle": "重複するポケモン",
+    "dupMessage": "{name} はすでに保存されています。置き換え、別個に保存、それともキャンセルしますか？",
+    "dupExisting": "既存",
+    "dupIncoming": "新規",
+    "dupReplace": "置き換える",
+    "dupSaveAnyway": "別個に保存",
+    "dupCancel": "キャンセル"
   },
   "PokemonBuilder": {
     "title": "ポケモン構築",

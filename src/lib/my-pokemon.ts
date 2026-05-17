@@ -67,6 +67,28 @@ export function addSavedMon(input: Omit<SavedMon, "id" | "savedAt">): SavedMon {
   return saved;
 }
 
+export function findSavedBySlug(slug: string): SavedMon | null {
+  return loadAll().find((m) => m.slug === slug) ?? null;
+}
+
+export function replaceSavedMon(
+  id: string,
+  input: Omit<SavedMon, "id" | "savedAt">,
+): SavedMon | null {
+  const list = loadAll();
+  const idx = list.findIndex((m) => m.id === id);
+  if (idx === -1) return null;
+  const replaced: SavedMon = {
+    ...input,
+    id,
+    savedAt: Date.now(),
+  };
+  const next = [...list];
+  next[idx] = replaced;
+  saveAll(next);
+  return replaced;
+}
+
 export function removeSavedMon(id: string) {
   saveAll(loadAll().filter((m) => m.id !== id));
 }

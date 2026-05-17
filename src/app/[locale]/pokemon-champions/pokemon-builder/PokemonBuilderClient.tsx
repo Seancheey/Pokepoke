@@ -15,7 +15,8 @@ import {
   type CalcInput,
 } from "@/lib/damage";
 import { cn } from "@/lib/cn";
-import { addSavedMon, onLoadSavedMon, type SavedMon } from "@/lib/my-pokemon";
+import { onLoadSavedMon } from "@/lib/my-pokemon";
+import { SaveMyPokemonButton } from "@/components/SaveMyPokemonButton";
 
 export type BuilderRefPokemon = {
   slug: string;
@@ -387,25 +388,6 @@ function ConfigPanel({
     return { value: n, label: localized + annot, searchText: n };
   });
 
-  const tMy = useTranslations("MyPokemon");
-  const [savedToast, setSavedToast] = useState(false);
-  function handleSave() {
-    addSavedMon({
-      slug: build.slug,
-      name: p.name,
-      spriteUrl: p.spriteUrl,
-      type1: p.type1,
-      type2: p.type2,
-      ability: build.ability,
-      item: build.item,
-      nature: build.nature,
-      moves: build.moves,
-      ev: build.ev,
-    });
-    setSavedToast(true);
-    setTimeout(() => setSavedToast(false), 1400);
-  }
-
   return (
     <aside className="sticky top-24 self-start space-y-4 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-start gap-3">
@@ -426,18 +408,21 @@ function ConfigPanel({
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={handleSave}
-        className={cn(
-          "w-full rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors",
-          savedToast
-            ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
-            : "border-zinc-300 bg-white text-zinc-700 hover:border-red-300 hover:bg-red-50 hover:text-red-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-red-900 dark:hover:bg-red-950/30 dark:hover:text-red-300",
-        )}
-      >
-        {savedToast ? `✓ ${tMy("saved")}` : `★ ${tMy("save")}`}
-      </button>
+      <SaveMyPokemonButton
+        variant="pill"
+        mon={{
+          slug: build.slug,
+          name: p.name,
+          spriteUrl: p.spriteUrl,
+          type1: p.type1,
+          type2: p.type2,
+          ability: build.ability,
+          item: build.item,
+          nature: build.nature,
+          moves: build.moves,
+          ev: build.ev,
+        }}
+      />
 
       {/* Switch species */}
       <div>

@@ -276,7 +276,14 @@
     "confirmClear": "Remove all saved Pokémon? This can't be undone.",
     "close": "Close",
     "clickToLoad": "Click to load into the active builder",
-    "noItem": "no item"
+    "noItem": "no item",
+    "dupTitle": "Duplicate Pokémon",
+    "dupMessage": "You already have a {name} saved. Replace it, save this as a duplicate, or cancel?",
+    "dupExisting": "Existing",
+    "dupIncoming": "New",
+    "dupReplace": "Replace existing",
+    "dupSaveAnyway": "Save as duplicate",
+    "dupCancel": "Cancel"
   },
   "PokemonBuilder": {
     "title": "Pokémon Builder",
