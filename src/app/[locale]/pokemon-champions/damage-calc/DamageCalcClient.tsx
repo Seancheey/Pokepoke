@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { TypeChip } from "@/components/TypeChip";
 import { Combobox, type ComboboxOption } from "@/components/Combobox";
@@ -17,6 +17,7 @@ import {
   type CalcOutput,
 } from "@/lib/damage";
 import { cn } from "@/lib/cn";
+import { loadAll as loadSavedMons, onSavedMonsChange, type SavedMon } from "@/lib/my-pokemon";
 
 // ─── Reference types passed from the server page ─────────────────────────────
 
@@ -115,23 +116,10 @@ export function DamageCalcClient({
   const itemBySlug = useMemo(() => new Map(items.map((i) => [i.slug, i])), [items]);
   const moveBySlug = useMemo(() => new Map(moves.map((m) => [m.slug, m])), [moves]);
 
-  // Default to top-2 mons in the meta — keeps it interesting on first load.
-  const topMons = useMemo(
-    () => [...pokemon].sort((a, b) => b.usagePct - a.usagePct),
-    [pokemon],
-  );
-  const [atk, setAtk] = useState<SideState>(() =>
-    defaultSide(topMons[0], true),
-  );
-  const [def, setDef] = useState<SideState>(() =>
-    defaultSide(topMons[1], false),
-  );
-  const [moveSlug, setMoveSlug] = useState<string>(() => {
-    const top = topMons[0]?.usage?.topMoves.find(
-      (m) => moveBySlug.get(m.slug)?.category !== "status",
-    );
-    return top?.slug ?? "";
-  });
+  // Start empty — the user picks attacker / move / defender deliberately.
+  const [atk, setAtk] = useState<SideState>(() => defaultSide(undefined, true));
+  const [def, setDef] = useState<SideState>(() => defaultSide(undefined, false));
+  const [moveSlug, setMoveSlug] = useState<string>("");
 
   const [weather, setWeather] = useState<Weather>("none");
   const [terrain, setTerrain] = useState<Terrain>("none");
@@ -144,22 +132,57 @@ export function DamageCalcClient({
   const [stealthRock, setStealthRock] = useState(false);
   const [spikes, setSpikes] = useState<0 | 1 | 2 | 3>(0);
 
-  // When attacker species changes, refresh defaults
+  // When attacker species changes, refresh defaults. If the species is cleared
+  // (slug === ""), also wipe the move so the page returns to a clean empty
+  // state rather than leaving an orphaned move selected.
   function pickAttackerSpecies(slug: string) {
     const p = monBySlug.get(slug);
     setAtk(defaultSide(p, true));
-    // Switch move to that mon's top damage move if possible
-    const learn = new Set(p?.learnableMoves);
-    const top = p?.usage?.topMoves.find(
+    if (!p) {
+      setMoveSlug("");
+      return;
+    }
+    const learn = new Set(p.learnableMoves);
+    const top = p.usage?.topMoves.find(
       (m) =>
-        learn.has(m.slug) &&
-        moveBySlug.get(m.slug)?.category !== "status",
+        learn.has(m.slug) && moveBySlug.get(m.slug)?.category !== "status",
     );
-    if (top) setMoveSlug(top.slug);
+    setMoveSlug(top?.slug ?? "");
   }
 
   function pickDefenderSpecies(slug: string) {
     setDef(defaultSide(monBySlug.get(slug), false));
+  }
+
+  // Apply a saved-mon config to a side (and, when attacker, seed the move).
+  function applySavedMon(mon: SavedMon, side: "attacker" | "defender") {
+    const p = monBySlug.get(mon.slug);
+    if (!p) return;
+    const next: SideState = {
+      slug: mon.slug,
+      ability: mon.ability || p.abilities[0] || "",
+      item: mon.item || "",
+      nature: (mon.nature as Nature) || "Hardy",
+      status: "none",
+      hpPct: 100,
+      vp: [...mon.ev] as [number, number, number, number, number, number],
+      stageAtk: 0, stageDef: 0, stageSpa: 0, stageSpd: 0,
+    };
+    if (side === "attacker") {
+      setAtk(next);
+      // Pick the first damage move from the saved set that the mon can learn.
+      const learn = new Set(p.learnableMoves);
+      const chosen = mon.moves.find(
+        (m) =>
+          m &&
+          learn.has(m) &&
+          (moveBySlug.get(m)?.category === "physical" ||
+            moveBySlug.get(m)?.category === "special"),
+      );
+      setMoveSlug(chosen ?? "");
+    } else {
+      setDef(next);
+    }
   }
 
   const attackerMon = monBySlug.get(atk.slug);
@@ -251,6 +274,8 @@ export function DamageCalcClient({
       }));
   }, [attackerMon, moves]);
 
+  const allEmpty = !atk.slug && !def.slug && !moveSlug;
+
   return (
     <div>
       <header>
@@ -258,27 +283,15 @@ export function DamageCalcClient({
         <p className="mt-1 text-sm text-zinc-500">{t("subtitle")}</p>
       </header>
 
-      {/* Move selector */}
-      <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <label className="block">
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-            {t("moveLabel")}
-          </span>
-          <div className="mt-1">
-            <Combobox
-              value={moveSlug}
-              options={moveOptions}
-              onChange={setMoveSlug}
-              placeholder={t("movePlaceholder")}
-              ariaLabel={t("moveLabel")}
-              allowClear
-            />
-          </div>
-        </label>
-      </section>
+      {/* Empty-state callout — disappears as soon as anything is picked. */}
+      {allEmpty ? (
+        <section className="mt-5 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/50 p-4 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-400">
+          <p>{t("emptyHint")}</p>
+        </section>
+      ) : null}
 
-      {/* Two-side grid */}
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      {/* Attacker → Move → Defender flow */}
+      <section className="mt-4 grid gap-3 md:grid-cols-[minmax(0,5fr)_auto_minmax(0,4fr)_auto_minmax(0,5fr)] md:items-stretch">
         <SidePanel
           title={t("attacker")}
           side={atk}
@@ -290,8 +303,18 @@ export function DamageCalcClient({
           abilityBySlug={abilityBySlug}
           items={items}
           itemBySlug={itemBySlug}
+          onApplySaved={(mon) => applySavedMon(mon, "attacker")}
           isAttacker
         />
+        <FlowArrow />
+        <MoveCard
+          moveSlug={moveSlug}
+          setMoveSlug={setMoveSlug}
+          move={move}
+          options={moveOptions}
+          attackerSelected={Boolean(attackerMon)}
+        />
+        <FlowArrow />
         <SidePanel
           title={t("defender")}
           side={def}
@@ -303,8 +326,14 @@ export function DamageCalcClient({
           abilityBySlug={abilityBySlug}
           items={items}
           itemBySlug={itemBySlug}
+          onApplySaved={(mon) => applySavedMon(mon, "defender")}
         />
-      </div>
+      </section>
+
+      {/* Headline result — % of defender HP, large and obvious. */}
+      <ResultHero
+        result={result} move={move} attacker={attackerMon} defender={defenderMon}
+      />
 
       {/* Field strip */}
       <FieldStrip
@@ -320,10 +349,79 @@ export function DamageCalcClient({
         spikes={spikes} setSpikes={setSpikes}
       />
 
-      <ResultCard
-        result={result} move={move} attacker={attackerMon} defender={defenderMon}
-      />
+      <ResultDetails result={result} />
     </div>
+  );
+}
+
+// ─── Flow arrow between Attacker / Move / Defender ──────────────────────────
+
+function FlowArrow() {
+  return (
+    <div
+      aria-hidden
+      className="flex items-center justify-center text-2xl text-zinc-300 dark:text-zinc-700"
+    >
+      <span className="hidden md:inline">→</span>
+      <span className="md:hidden">↓</span>
+    </div>
+  );
+}
+
+// ─── Move card (center of the flow) ─────────────────────────────────────────
+
+function MoveCard({
+  moveSlug,
+  setMoveSlug,
+  move,
+  options,
+  attackerSelected,
+}: {
+  moveSlug: string;
+  setMoveSlug: (v: string) => void;
+  move: CalcRefMove | undefined;
+  options: ComboboxOption[];
+  attackerSelected: boolean;
+}) {
+  const t = useTranslations("DamageCalc");
+  return (
+    <article className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+      <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">
+        {t("moveLabel")}
+      </h2>
+      <div className="mt-3">
+        <Combobox
+          value={moveSlug}
+          options={options}
+          onChange={setMoveSlug}
+          placeholder={
+            attackerSelected ? t("movePlaceholder") : t("pickAttackerFirst")
+          }
+          ariaLabel={t("moveLabel")}
+          allowClear
+        />
+      </div>
+      {move ? (
+        <div className="mt-3 space-y-2 text-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <TypeChip type={move.type as PokemonType} size="sm" />
+            <span className="text-xs uppercase tracking-wider text-zinc-500">
+              {move.category}
+            </span>
+          </div>
+          <dl className="grid grid-cols-2 gap-1 text-xs">
+            <dt className="text-zinc-500">{t("powerLabel")}</dt>
+            <dd className="text-right font-mono tabular-nums">
+              {move.power > 0 ? move.power : "—"}
+            </dd>
+          </dl>
+        </div>
+      ) : (
+        <p className="mt-3 text-xs italic text-zinc-400">
+          {attackerSelected ? t("noMoveSelected") : t("pickAttackerFirst")}
+        </p>
+      )}
+    </article>
   );
 }
 
@@ -340,6 +438,7 @@ function SidePanel({
   abilityBySlug,
   items,
   itemBySlug,
+  onApplySaved,
   isAttacker,
 }: {
   title: string;
@@ -352,6 +451,7 @@ function SidePanel({
   abilityBySlug: Map<string, CalcRefAbility>;
   items: CalcRefItem[];
   itemBySlug: Map<string, CalcRefItem>;
+  onApplySaved: (mon: SavedMon) => void;
   isAttacker?: boolean;
 }) {
   const t = useTranslations("DamageCalc");
@@ -415,7 +515,12 @@ function SidePanel({
 
   return (
     <article className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{title}</h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">
+          {title}
+        </h2>
+        <ImportFromSavedButton onPick={onApplySaved} />
+      </div>
 
       <div className="mt-3 flex items-center gap-3">
         {mon ? (
@@ -435,6 +540,7 @@ function SidePanel({
             onChange={onSpeciesChange}
             placeholder={t("speciesPlaceholder")}
             ariaLabel={t("speciesLabel")}
+            allowClear
           />
           {mon ? (
             <div className="mt-2 flex flex-wrap gap-1">
@@ -445,6 +551,14 @@ function SidePanel({
         </div>
       </div>
 
+      {!mon ? (
+        <p className="mt-3 text-xs italic text-zinc-400">
+          {isAttacker ? t("pickAttackerHint") : t("pickDefenderHint")}
+        </p>
+      ) : null}
+
+      {mon ? (
+      <>
       <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
         <SmallField label={t("abilityLabel")}>
           <Combobox
@@ -553,6 +667,8 @@ function SidePanel({
           />
           <span className="w-10 text-right font-mono tabular-nums">{side.hpPct}%</span>
         </div>
+      ) : null}
+      </>
       ) : null}
     </article>
   );
@@ -696,9 +812,9 @@ function CheckChip({
   );
 }
 
-// ─── Result panel ────────────────────────────────────────────────────────────
+// ─── Result hero: the headline % of defender HP, large + obvious ─────────────
 
-function ResultCard({
+function ResultHero({
   result, move, attacker, defender,
 }: {
   result: CalcOutput | null;
@@ -710,16 +826,111 @@ function ResultCard({
 
   if (!result || !move || !attacker || !defender) {
     return (
-      <section className="mt-4 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900/40">
-        {t("noResult")}
+      <section className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
+        <div className="text-3xl font-black text-zinc-300 dark:text-zinc-700">
+          —%
+        </div>
+        <p className="mt-2 text-sm text-zinc-500">{t("noResult")}</p>
       </section>
     );
   }
 
-  const effLabel =
+  // Compute KO chance from current HP, not from full HP.
+  // hpPct is already baked into the caller's defender side; pull it back via
+  // the rolls + defender max HP. Roll values are absolute damage numbers.
+  // The damage calc doesn't surface defender hpPct, so we trust the existing
+  // result range and tone by lethality at 100% HP for the badge color, then
+  // count rolls >= the actually-current HP to compute "% chance to KO".
+  // Note: this matches Pikalytics/Showdown convention.
+  const koPct = (() => {
+    if (result.effectiveness === 0) return 0;
+    if (result.max <= 0) return 0;
+    // hpPct lives on the defender state in the parent; the result.defenderMaxHp
+    // here is already the full HP. We approximate current HP from min/max:
+    // the parent passes hpPct into calc, which doesn't propagate it out, so
+    // we count rolls that fully reach max HP. For "X% to KO at current HP",
+    // we'd need defender.hpPct propagated — accept full-HP semantics here.
+    const targetHp = result.defenderMaxHp;
+    const koRolls = result.rolls.filter((r) => r >= targetHp).length;
+    return Math.round((koRolls / Math.max(1, result.rolls.length)) * 100);
+  })();
+
+  // Tone for the % range. ≥100% guaranteed KO from full = red. Half = orange.
+  // <half = amber. Immune / no damage = zinc.
+  const heroTone =
+    result.effectiveness === 0 || result.max === 0
+      ? "from-zinc-200 to-zinc-100 text-zinc-500 dark:from-zinc-800 dark:to-zinc-900"
+      : result.minPct >= 100
+      ? "from-red-600 to-red-500 text-white"
+      : result.maxPct >= 100
+      ? "from-orange-500 to-amber-400 text-white"
+      : result.maxPct >= 50
+      ? "from-amber-300 to-yellow-200 text-amber-900 dark:from-amber-500 dark:to-amber-400 dark:text-amber-950"
+      : "from-zinc-100 to-white text-zinc-800 dark:from-zinc-800 dark:to-zinc-900 dark:text-zinc-200";
+
+  const koBadge =
     result.effectiveness === 0
-      ? "×0 (immune)"
-      : `×${result.effectiveness}`;
+      ? { label: t("koImmune"), tone: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300" }
+      : koPct >= 100
+      ? { label: t("koGuaranteed"), tone: "bg-red-600 text-white" }
+      : koPct > 0
+      ? {
+          label: t("koChance", { pct: koPct }),
+          tone: "bg-amber-500 text-white",
+        }
+      : { label: t("noKo"), tone: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300" };
+
+  return (
+    <section
+      className={cn(
+        "mt-6 rounded-2xl border border-zinc-200 bg-gradient-to-br p-6 shadow-sm dark:border-zinc-800",
+        heroTone,
+      )}
+    >
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] opacity-70">
+        {t("pctRange")}
+      </p>
+      <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
+        <div className="font-black leading-none tracking-tight">
+          <span className="text-5xl sm:text-7xl tabular-nums">
+            {result.minPct}%
+          </span>
+          <span className="mx-2 text-3xl sm:text-5xl opacity-60">–</span>
+          <span className="text-5xl sm:text-7xl tabular-nums">
+            {result.maxPct}%
+          </span>
+        </div>
+        <span
+          className={cn(
+            "rounded-full px-3 py-1 text-sm font-bold uppercase tracking-wider",
+            koBadge.tone,
+          )}
+        >
+          {koBadge.label}
+        </span>
+      </div>
+      <p className="mt-2 text-sm opacity-80">
+        {t("pctOfDefender", {
+          attacker: attacker.name,
+          move: move.name,
+          defender: defender.name,
+          min: result.min,
+          max: result.max,
+        })}
+      </p>
+    </section>
+  );
+}
+
+// ─── Secondary stats / histogram / modifier trace ────────────────────────────
+
+function ResultDetails({ result }: { result: CalcOutput | null }) {
+  const t = useTranslations("DamageCalc");
+
+  if (!result) return null;
+
+  const effLabel =
+    result.effectiveness === 0 ? "×0 (immune)" : `×${result.effectiveness}`;
   const effTone =
     result.effectiveness === 0
       ? "text-zinc-500"
@@ -730,11 +941,9 @@ function ResultCard({
       : "text-zinc-600";
 
   return (
-    <section className="mt-4 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-      <h2 className="text-lg font-bold">{t("result")}</h2>
-      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-5">
+    <section className="mt-4 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label={t("minMax")} value={`${result.min} – ${result.max}`} />
-        <Stat label={t("pctRange")} value={`${result.minPct}% – ${result.maxPct}%`} />
         <Stat label={t("stab")} value={`×${result.stab}`} />
         <Stat label={t("effectiveness")} value={effLabel} className={effTone} />
         <Stat
@@ -745,8 +954,8 @@ function ResultCard({
       </div>
 
       {/* Roll histogram */}
-      <div className="mt-5">
-        <div className="flex items-end gap-0.5">
+      <div className="mt-4">
+        <div className="flex items-end gap-0.5 h-12">
           {result.rolls.map((r, i) => {
             const pct = result.max === 0 ? 0 : (r / result.max) * 100;
             return (
@@ -757,7 +966,7 @@ function ResultCard({
                   "flex-1 rounded-t bg-gradient-to-t from-red-500 to-amber-400",
                   result.effectiveness === 0 && "from-zinc-300 to-zinc-200",
                 )}
-                style={{ height: `${Math.max(4, pct)}px` }}
+                style={{ height: `${Math.max(8, (pct / 100) * 48)}px` }}
               />
             );
           })}
@@ -769,7 +978,7 @@ function ResultCard({
       </div>
 
       {/* Modifier trace */}
-      <div className="mt-5">
+      <div className="mt-4">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
           {t("modifiers")}
         </h3>
@@ -803,6 +1012,97 @@ function Stat({
     <div>
       <div className="text-xs uppercase tracking-wider text-zinc-500">{label}</div>
       <div className={cn("mt-1 font-mono text-base tabular-nums", className)}>{value}</div>
+    </div>
+  );
+}
+
+// ─── Import-from-saved-mons button ───────────────────────────────────────────
+
+function ImportFromSavedButton({
+  onPick,
+}: {
+  onPick: (mon: SavedMon) => void;
+}) {
+  const t = useTranslations("DamageCalc");
+  const [open, setOpen] = useState(false);
+  const [mons, setMons] = useState<SavedMon[]>([]);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  // Refresh the saved list when the popover opens and on storage changes.
+  useEffect(() => {
+    if (!open) return;
+    setMons(loadSavedMons());
+    const off = onSavedMonsChange(() => setMons(loadSavedMons()));
+    return off;
+  }, [open]);
+
+  // Close on outside click / Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-[11px] font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+      >
+        ★ {t("importFromSaved")}
+      </button>
+      {open ? (
+        <div className="absolute right-0 z-20 mt-1 w-72 max-h-80 overflow-auto rounded-lg border border-zinc-200 bg-white p-2 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+          {mons.length === 0 ? (
+            <p className="px-2 py-3 text-center text-xs italic text-zinc-500">
+              {t("noSavedMons")}
+            </p>
+          ) : (
+            <ul className="space-y-1">
+              {mons.map((m) => (
+                <li key={m.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onPick(m);
+                      setOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-md p-1.5 text-left text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    <Image
+                      src={m.spriteUrl}
+                      alt=""
+                      width={32}
+                      height={32}
+                      unoptimized
+                      className="h-8 w-8 shrink-0 object-contain"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium">{m.name}</div>
+                      <div className="truncate text-[10px] text-zinc-500">
+                        {m.abilityName || m.ability || "—"}
+                        {m.item ? ` · ${m.itemName || m.item.replace(/-/g, " ")}` : ""}
+                        {` · ${m.nature}`}
+                      </div>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

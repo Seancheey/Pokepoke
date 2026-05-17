@@ -221,7 +221,20 @@
     "speciesPlaceholder": "选择宝可梦…",
     "movePlaceholder": "选择攻击招式…",
     "itemPlaceholder": "(无道具)",
-    "abilityPlaceholder": "(无)"
+    "abilityPlaceholder": "(无)",
+    "emptyHint": "在左侧选择攻击方、中间选择招式、右侧选择防御方。结果会显示在下方。",
+    "pickAttackerFirst": "请先选择攻击方",
+    "pickAttackerHint": "选择一只宝可梦开始。",
+    "pickDefenderHint": "选择一只宝可梦作为防御方。",
+    "noMoveSelected": "选择一个攻击招式。",
+    "powerLabel": "威力",
+    "pctOfDefender": "对 {defender} 造成的伤害:{attacker} 的 {move} 打出 {min}–{max} HP。",
+    "koGuaranteed": "确定击倒",
+    "koChance": "{pct}% 几率击倒",
+    "noKo": "无法击倒",
+    "koImmune": "免疫",
+    "importFromSaved": "从我的宝可梦",
+    "noSavedMons": "暂无保存的宝可梦。从队伍构筑界面点 ★ 即可保存。"
   },
   "TeamBuilder": {
     "title": "队伍构筑",

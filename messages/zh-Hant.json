@@ -221,7 +221,20 @@
     "speciesPlaceholder": "選擇寶可夢…",
     "movePlaceholder": "選擇攻擊招式…",
     "itemPlaceholder": "(無道具)",
-    "abilityPlaceholder": "(無)"
+    "abilityPlaceholder": "(無)",
+    "emptyHint": "在左側選擇攻擊方、中間選擇招式、右側選擇防禦方。結果會顯示在下方。",
+    "pickAttackerFirst": "請先選擇攻擊方",
+    "pickAttackerHint": "選擇一隻寶可夢開始。",
+    "pickDefenderHint": "選擇一隻寶可夢作為防禦方。",
+    "noMoveSelected": "選擇一個攻擊招式。",
+    "powerLabel": "威力",
+    "pctOfDefender": "對 {defender} 造成的傷害:{attacker} 的 {move} 打出 {min}–{max} HP。",
+    "koGuaranteed": "確定擊倒",
+    "koChance": "{pct}% 機率擊倒",
+    "noKo": "無法擊倒",
+    "koImmune": "免疫",
+    "importFromSaved": "從我的寶可夢",
+    "noSavedMons": "尚未儲存任何寶可夢。在隊伍構築介面點 ★ 即可儲存。"
   },
   "TeamBuilder": {
     "title": "隊伍構築",

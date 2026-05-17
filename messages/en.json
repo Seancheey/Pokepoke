@@ -221,7 +221,20 @@
     "speciesPlaceholder": "Pick a Pokémon…",
     "movePlaceholder": "Pick a damage move…",
     "itemPlaceholder": "(no item)",
-    "abilityPlaceholder": "(any)"
+    "abilityPlaceholder": "(any)",
+    "emptyHint": "Pick an attacker on the left, a move in the middle, and a defender on the right. The result will appear below.",
+    "pickAttackerFirst": "Pick an attacker first",
+    "pickAttackerHint": "Pick a Pokémon to start.",
+    "pickDefenderHint": "Pick a Pokémon to face.",
+    "noMoveSelected": "Pick a damage move.",
+    "powerLabel": "Base power",
+    "pctOfDefender": "Damage to {defender}: {min}–{max} HP from {attacker}'s {move}.",
+    "koGuaranteed": "Guaranteed KO",
+    "koChance": "{pct}% chance to KO",
+    "noKo": "Cannot KO",
+    "koImmune": "Immune",
+    "importFromSaved": "From My Pokémon",
+    "noSavedMons": "No saved Pokémon yet. Save one from the Team Builder ★."
   },
   "TeamBuilder": {
     "title": "Team Builder",
