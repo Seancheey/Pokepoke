@@ -41,8 +41,8 @@ export async function Nav() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2 md:ml-0">
-          <FormatToggle />
           <GitHubStarLink />
+          <FormatToggle />
           <LocaleSwitcher />
         </div>
       </div>
