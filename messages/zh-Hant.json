@@ -10,7 +10,10 @@
     "pokemonBuilder": "寶可夢構築",
     "teams": "隊伍",
     "damageCalc": "傷害計算",
-    "language": "語言"
+    "language": "語言",
+    "formatLabel": "對戰形式",
+    "formatSingles": "單打",
+    "formatDoubles": "雙打"
   },
   "Hub": {
     "regulationBadge": "規則 M-A",

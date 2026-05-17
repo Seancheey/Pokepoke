@@ -66,13 +66,16 @@ export default async function PokemonDetailPage({
     abilityRows.map((a) => [a.slug, localizedAbilityName(a, loc)]),
   );
 
-  // Per-mon move usage % (Smogon overlay)
+  // Per-mon move usage % (Smogon overlay). usageStats is now per-format —
+  // server-rendered pages default to the doubles slice (Champions' primary
+  // format). Builder pages let the user toggle.
   let pctByMove = new Map<string, number>();
   try {
     const usage = JSON.parse(p.usageStats);
-    if (usage?.topMoves) {
+    const slice = usage?.doubles ?? usage?.singles ?? (Array.isArray(usage?.topMoves) ? usage : null);
+    if (slice?.topMoves) {
       pctByMove = new Map<string, number>(
-        (usage.topMoves as Array<{ slug: string; pct: number }>).map((m) => [m.slug, m.pct]),
+        (slice.topMoves as Array<{ slug: string; pct: number }>).map((m) => [m.slug, m.pct]),
       );
     }
   } catch { /* ignore */ }

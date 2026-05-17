@@ -41,7 +41,13 @@ export default async function DamageCalcPage({
     let usage: CalcRefPokemon["usage"] = null;
     try {
       const parsed = JSON.parse(p.usageStats);
-      if (parsed && Array.isArray(parsed.topMoves)) usage = parsed;
+      // usageStats is now per-format. Damage Calc is a server-rendered
+      // ref-data page; pick doubles by default (Champions' primary format)
+      // and fall back to singles. Legacy flat shape (pre-migration) still
+      // supported.
+      const slice = parsed?.doubles ?? parsed?.singles
+        ?? (Array.isArray(parsed?.topMoves) ? parsed : null);
+      if (slice && Array.isArray(slice.topMoves)) usage = slice;
     } catch { /* leave null */ }
     return {
       slug: p.slug,

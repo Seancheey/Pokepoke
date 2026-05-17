@@ -9,10 +9,11 @@ import {
 } from "@/lib/i18n-pokemon";
 import {
   PokemonBuilderClient,
-  type BuilderRefPokemon,
+  type BuilderRawRefPokemon,
   type BuilderRefMove,
   type BuilderRefAbility,
   type BuilderRefItem,
+  type PokemonUsage,
 } from "./PokemonBuilderClient";
 
 export const dynamic = "force-dynamic";
@@ -38,11 +39,19 @@ export default async function PokemonBuilderPage({
     }),
   ]);
 
-  const refPokemon: BuilderRefPokemon[] = pokemon.map((p) => {
-    let usage: BuilderRefPokemon["usage"] = null;
+  const refPokemon: BuilderRawRefPokemon[] = pokemon.map((p) => {
+    let usageByFormat: BuilderRawRefPokemon["usageByFormat"] = null;
     try {
       const parsed = JSON.parse(p.usageStats);
-      if (parsed && Array.isArray(parsed.topMoves)) usage = parsed;
+      if (parsed && (parsed.singles || parsed.doubles)) {
+        usageByFormat = {
+          singles: (parsed.singles ?? null) as PokemonUsage | null,
+          doubles: (parsed.doubles ?? null) as PokemonUsage | null,
+        };
+      } else if (parsed && Array.isArray(parsed.topMoves)) {
+        // Legacy pre-migration shape — treat as doubles only.
+        usageByFormat = { singles: null, doubles: parsed as PokemonUsage };
+      }
     } catch {
       /* leave null */
     }
@@ -57,7 +66,7 @@ export default async function PokemonBuilderPage({
       hp: p.hp, atk: p.atk, def: p.def, spa: p.spa, spd: p.spd, spe: p.spe,
       learnableMoves: JSON.parse(p.learnableMoves) as string[],
       usagePct: p.usagePct,
-      usage,
+      usageByFormat,
     };
   });
   const refMoves: BuilderRefMove[] = moves.map((m) => ({
@@ -80,7 +89,7 @@ export default async function PokemonBuilderPage({
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
       <PokemonBuilderClient
-        pokemon={refPokemon}
+        pokemonRaw={refPokemon}
         moves={refMoves}
         abilities={refAbilities}
         items={refItems}

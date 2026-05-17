@@ -10,7 +10,10 @@
     "pokemonBuilder": "ポケモン構築",
     "teams": "チーム一覧",
     "damageCalc": "ダメージ計算",
-    "language": "言語"
+    "language": "言語",
+    "formatLabel": "フォーマット",
+    "formatSingles": "シングル",
+    "formatDoubles": "ダブル"
   },
   "Hub": {
     "regulationBadge": "レギュ M-A",

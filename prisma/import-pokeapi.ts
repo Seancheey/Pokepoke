@@ -205,15 +205,23 @@ function forceI18n(
 
 // ─── Smogon usage stats overlay ──────────────────────────────────────────────
 
-// Pokémon Champions VGC Regulation M-A — the actual competitive format for
-// Pokémon Champions (NOT the same as gen9vgc2026regi which is Scarlet/Violet's
-// VGC). Prefer the all-ladder chaos dump because it has the best roster and
-// low-usage move/item/spread coverage; fall back to high-cutoff files if the
-// broader snapshot has not been refreshed locally yet.
-const SMOGON_FILES = [
+// Pokémon Champions chaos dumps from Smogon. We pull both formats because
+// usage skews very differently between singles and doubles — players want
+// to see the right stats for whichever format they're building for.
+//   • VGC = official Pokémon Champions doubles (Regulation M-A)
+//   • BSS = official Pokémon Champions singles (Regulation M-A)
+// In each list we prefer the all-ladder (0) dump for the broadest roster /
+// move / item coverage and fall back to higher cutoffs if the broader file
+// isn't on disk yet.
+const SMOGON_FILES_DOUBLES = [
   "smogon-championsvgc2026regma-0.json",
   "smogon-championsvgc2026regma-1500.json",
   "smogon-championsvgc2026regma-1760.json",
+];
+const SMOGON_FILES_SINGLES = [
+  "smogon-championsbssregma-0.json",
+  "smogon-championsbssregma-1500.json",
+  "smogon-championsbssregma-1760.json",
 ];
 const TOP_MOVE_COUNT = 16;
 const TOP_ITEM_COUNT = 10;
@@ -503,13 +511,9 @@ async function main() {
   );
 
   // ─── Smogon usage stats ─────────────────────────────────────────────────────
-  const smogonFile = SMOGON_FILES.find((file) => fs.existsSync(path.join(DATA, file))) ?? null;
-  const smogon = smogonFile
-    ? (JSON.parse(fs.readFileSync(path.join(DATA, smogonFile), "utf8")) as SmogonDump)
-    : null;
-
-  // Build reverse-lookup maps from condensed slug → original slug for items / abilities / moves.
-  // Used to translate Smogon's "fakeout" → our "fake-out".
+  // Build the condense-lookup maps once (file-independent); we'll mutate the
+  // item-slug map as both files are scanned so synthetic items from either
+  // format get a slug.
   const moveSlugByCondensed = new Map<string, string>(
     moveRowsRaw.map((m) => [condense(m.identifier), m.identifier]),
   );
@@ -521,7 +525,48 @@ async function main() {
     itemMetaRaw.map((i) => [condense(i.identifier), i.identifier]),
   );
   const syntheticItemNameBySlug = new Map<string, string>();
-  if (smogon) {
+  const mapSmogonAbility = (name: string) => abilitySlugByCondensed.get(condense(name)) ?? null;
+  const mapSmogonItem = (name: string) => {
+    if (condense(name) === "nothing") return null;
+    return itemSlugByCondensed.get(condense(name)) ?? null;
+  };
+  const mapSmogonMove = (name: string) => moveSlugByCondensed.get(condense(name)) ?? null;
+  const allPokemonSlugs = new Set(pokemonRows.map((p) => p.identifier));
+
+  type UsageStats = {
+    topAbilities: Array<{ slug: string; pct: number }>;
+    topItems: Array<{ slug: string; pct: number }>;
+    topMoves: Array<{ slug: string; pct: number }>;
+    topSpreads: Array<{ nature: string; vp: [number, number, number, number, number, number]; pct: number }>;
+    source: string;
+  };
+  type FormatStats = {
+    smogonFile: string | null;
+    usageBySlug: Map<string, UsageStats>;
+    rawCountBySlug: Map<string, number>;
+    observedMoveSlugsByPokemon: Map<string, Set<string>>;
+    globalAbilityUsagePct: Map<string, number>;
+    globalItemUsagePct: Map<string, number>;
+    globalMoveUsagePct: Map<string, number>;
+    smogonRankBySlug: Map<string, { rank: number; usagePct: number }>;
+  };
+
+  function processSmogonFiles(files: string[]): FormatStats {
+    const empty: FormatStats = {
+      smogonFile: null,
+      usageBySlug: new Map(),
+      rawCountBySlug: new Map(),
+      observedMoveSlugsByPokemon: new Map(),
+      globalAbilityUsagePct: new Map(),
+      globalItemUsagePct: new Map(),
+      globalMoveUsagePct: new Map(),
+      smogonRankBySlug: new Map(),
+    };
+    const file = files.find((f) => fs.existsSync(path.join(DATA, f))) ?? null;
+    if (!file) return empty;
+    const smogon = JSON.parse(fs.readFileSync(path.join(DATA, file), "utf8")) as SmogonDump;
+
+    // Synthetic item slugs for items in the Smogon dump but missing from PokeAPI
     for (const entry of Object.values(smogon.data)) {
       for (const itemName of Object.keys(entry.Items ?? {})) {
         if (condense(itemName) === "nothing") continue;
@@ -533,39 +578,19 @@ async function main() {
         syntheticItemNameBySlug.set(slug, itemName);
       }
     }
-  }
 
-  const mapSmogonAbility = (name: string) => abilitySlugByCondensed.get(condense(name)) ?? null;
-  const mapSmogonItem = (name: string) => {
-    if (condense(name) === "nothing") return null;
-    return itemSlugByCondensed.get(condense(name)) ?? null;
-  };
-  const mapSmogonMove = (name: string) => moveSlugByCondensed.get(condense(name)) ?? null;
+    const usageBySlug = new Map<string, UsageStats>();
+    const rawCountBySlug = new Map<string, number>();
+    const usageRatioBySlug = new Map<string, number>();
+    const observedMoveSlugsByPokemon = new Map<string, Set<string>>();
+    const moveUsageWeightBySlug = new Map<string, number>();
+    const abilityUsageWeightBySlug = new Map<string, number>();
+    const itemUsageWeightBySlug = new Map<string, number>();
+    let moveSlotWeight = 0;
+    let abilitySlotWeight = 0;
+    let itemSlotWeight = 0;
 
-  const allPokemonSlugs = new Set(pokemonRows.map((p) => p.identifier));
-
-  // Build (slug → usage stats blob) and (slug → raw count) from the Smogon dump.
-  type UsageStats = {
-    topAbilities: Array<{ slug: string; pct: number }>;
-    topItems: Array<{ slug: string; pct: number }>;
-    topMoves: Array<{ slug: string; pct: number }>;
-    topSpreads: Array<{ nature: string; vp: [number, number, number, number, number, number]; pct: number }>;
-    source: string;
-  };
-  const usageBySlug = new Map<string, UsageStats>();
-  const rawCountBySlug = new Map<string, number>();
-  const usageRatioBySlug = new Map<string, number>();
-  const observedMoveSlugsByPokemon = new Map<string, Set<string>>();
-  const moveUsageWeightBySlug = new Map<string, number>();
-  const abilityUsageWeightBySlug = new Map<string, number>();
-  const itemUsageWeightBySlug = new Map<string, number>();
-  let moveSlotWeight = 0;
-  let abilitySlotWeight = 0;
-  let itemSlotWeight = 0;
-
-  const totalBattles = (smogon?.info?.["number of battles"] as number) ?? 1;
-
-  if (smogon) {
+    const totalBattles = (smogon.info?.["number of battles"] as number) ?? 1;
     const monEntries = Object.entries(smogon.data);
     const mergedBySlug = new Map<string, SmogonEntry>();
     let unmapped = 0;
@@ -624,26 +649,74 @@ async function main() {
               pct: spreadTotal > 0 ? +((v / spreadTotal) * 100).toFixed(1) : 0,
             }];
           }),
-        source: smogonFile ?? "none",
+        source: file,
       };
       usageBySlug.set(slug, stats);
     }
-    console.log(`  Smogon (${smogonFile}): ${monEntries.length} mons, ${unmapped} unmapped, ${usageBySlug.size} mapped`);
+    console.log(`  Smogon (${file}): ${monEntries.length} mons, ${unmapped} unmapped, ${usageBySlug.size} mapped`);
+
+    const sortedByUsage = [...usageRatioBySlug.entries()].sort((a, b) => b[1] - a[1]);
+    const smogonRankBySlug = new Map<string, { rank: number; usagePct: number }>();
+    sortedByUsage.forEach(([slug, usageRatio], i) => {
+      smogonRankBySlug.set(slug, {
+        rank: i + 1,
+        usagePct: +(usageRatio * 100).toFixed(1),
+      });
+    });
+
+    return {
+      smogonFile: file,
+      usageBySlug,
+      rawCountBySlug,
+      observedMoveSlugsByPokemon,
+      globalAbilityUsagePct: normalizeWeightedUsage(abilityUsageWeightBySlug, abilitySlotWeight),
+      globalItemUsagePct: normalizeWeightedUsage(itemUsageWeightBySlug, itemSlotWeight),
+      globalMoveUsagePct: normalizeWeightedUsage(moveUsageWeightBySlug, moveSlotWeight),
+      smogonRankBySlug,
+    };
   }
 
-  const globalAbilityUsagePct = normalizeWeightedUsage(abilityUsageWeightBySlug, abilitySlotWeight);
-  const globalItemUsagePct = normalizeWeightedUsage(itemUsageWeightBySlug, itemSlotWeight);
-  const globalMoveUsagePct = normalizeWeightedUsage(moveUsageWeightBySlug, moveSlotWeight);
+  const doublesStats = processSmogonFiles(SMOGON_FILES_DOUBLES);
+  const singlesStats = processSmogonFiles(SMOGON_FILES_SINGLES);
+  // For "any data was loaded" checks downstream
+  const smogonFile = doublesStats.smogonFile ?? singlesStats.smogonFile;
 
-  // Derive rank + usagePct from Smogon's weighted usage field.
-  const sortedByUsage = [...usageRatioBySlug.entries()].sort((a, b) => b[1] - a[1]);
+  // Union the roster across both formats — a mon is "Champions-legal" if it
+  // shows up in either singles or doubles usage data.
+  const rawCountBySlug = new Map<string, number>();
+  for (const [k, v] of doublesStats.rawCountBySlug) rawCountBySlug.set(k, v);
+  for (const [k, v] of singlesStats.rawCountBySlug) {
+    rawCountBySlug.set(k, (rawCountBySlug.get(k) ?? 0) + v);
+  }
+
+  // Per-Pokemon "observed moves" — union across formats for the learnset filter.
+  const observedMoveSlugsByPokemon = new Map<string, Set<string>>();
+  for (const [slug, set] of doublesStats.observedMoveSlugsByPokemon) {
+    observedMoveSlugsByPokemon.set(slug, new Set(set));
+  }
+  for (const [slug, set] of singlesStats.observedMoveSlugsByPokemon) {
+    const merged = observedMoveSlugsByPokemon.get(slug) ?? new Set<string>();
+    for (const m of set) merged.add(m);
+    observedMoveSlugsByPokemon.set(slug, merged);
+  }
+
+  // Move / ability / item global usage — take the max across formats so the
+  // catalog shows a move's relevance in whichever format prefers it.
+  function mergeMaxPct(a: Map<string, number>, b: Map<string, number>): Map<string, number> {
+    const out = new Map<string, number>();
+    for (const [k, v] of a) out.set(k, v);
+    for (const [k, v] of b) out.set(k, Math.max(out.get(k) ?? 0, v));
+    return out;
+  }
+  const globalAbilityUsagePct = mergeMaxPct(doublesStats.globalAbilityUsagePct, singlesStats.globalAbilityUsagePct);
+  const globalItemUsagePct = mergeMaxPct(doublesStats.globalItemUsagePct, singlesStats.globalItemUsagePct);
+  const globalMoveUsagePct = mergeMaxPct(doublesStats.globalMoveUsagePct, singlesStats.globalMoveUsagePct);
+
+  // Pokemon row's rank + usagePct: prefer doubles (the primary Champions
+  // format), fall back to singles if the mon is singles-only.
   const smogonRankBySlug = new Map<string, { rank: number; usagePct: number }>();
-  sortedByUsage.forEach(([slug, usageRatio], i) => {
-    smogonRankBySlug.set(slug, {
-      rank: i + 1,
-      usagePct: +(usageRatio * 100).toFixed(1),
-    });
-  });
+  for (const [slug, info] of singlesStats.smogonRankBySlug) smogonRankBySlug.set(slug, info);
+  for (const [slug, info] of doublesStats.smogonRankBySlug) smogonRankBySlug.set(slug, info);
 
   // Mega / Primal forms — PokeAPI ships localized pokemon_name for some but
   // not all of them, leaving ~40% of mega forms with just the species name
@@ -751,10 +824,15 @@ async function main() {
     // If Smogon data is loaded, never fall back to the static overlay — its ranks
     // collide with Smogon's, producing duplicate rank values.
     const smogonOverlay = smogonRankBySlug.get(p.identifier);
-    const overlay = smogon
+    const overlay = smogonFile
       ? smogonOverlay
       : (smogonOverlay ?? overlayBySpecies.get(p.identifier));
-    const usageStats = usageBySlug.get(p.identifier) ?? null;
+    // Per-format usage stats. UI reads usageStats[format] (singles | doubles).
+    const usageStats = {
+      singles: singlesStats.usageBySlug.get(p.identifier) ?? null,
+      doubles: doublesStats.usageBySlug.get(p.identifier) ?? null,
+    };
+    const hasUsage = usageStats.singles || usageStats.doubles;
     const observedChampionsMoves = observedMoveSlugsByPokemon.get(p.identifier);
     let learnableMoves = observedChampionsMoves?.size
       ? Array.from(observedChampionsMoves).sort()
@@ -794,7 +872,7 @@ async function main() {
         rawCountBySlug.has(p.identifier) ? ["pokemon-champions"] : [],
       ),
       learnableMoves: JSON.stringify(learnableMoves),
-      usageStats: usageStats ? JSON.stringify(usageStats) : "{}",
+      usageStats: hasUsage ? JSON.stringify(usageStats) : "{}",
     };
   });
 

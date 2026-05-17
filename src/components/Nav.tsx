@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { BrandMark } from "./BrandMark";
+import { FormatToggle } from "./FormatToggle";
 
 export async function Nav() {
   const t = await getTranslations("Nav");
@@ -38,7 +39,8 @@ export async function Nav() {
             </Link>
           ))}
         </nav>
-        <div className="ml-auto md:ml-0">
+        <div className="ml-auto flex items-center gap-2 md:ml-0">
+          <FormatToggle />
           <LocaleSwitcher />
         </div>
       </div>

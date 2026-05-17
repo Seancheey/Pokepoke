@@ -19,6 +19,11 @@ import {
 import { cn } from "@/lib/cn";
 import { onLoadSavedMon } from "@/lib/my-pokemon";
 import { SaveMyPokemonButton } from "@/components/SaveMyPokemonButton";
+import {
+  loadFormatPref,
+  onFormatPrefChange,
+  type BattleFormat,
+} from "@/lib/format-pref";
 
 export type RefPokemon = {
   slug: string;
@@ -32,6 +37,9 @@ export type RefPokemon = {
   learnableMoves: string[];
   usagePct: number;
   usage: PokemonUsage | null;
+};
+export type RawRefPokemon = Omit<RefPokemon, "usage"> & {
+  usageByFormat: { singles: PokemonUsage | null; doubles: PokemonUsage | null } | null;
 };
 
 export type PokemonUsage = {
@@ -55,13 +63,13 @@ const STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"] as const;
 type StatKey = (typeof STAT_KEYS)[number];
 
 export function TeamBuilderClient({
-  pokemon,
+  pokemonRaw,
   moves,
   abilities,
   items,
   initialTeam,
 }: {
-  pokemon: RefPokemon[];
+  pokemonRaw: RawRefPokemon[];
   moves: RefMove[];
   abilities: RefAbility[];
   items: RefItem[];
@@ -70,6 +78,21 @@ export function TeamBuilderClient({
   const t = useTranslations("TeamBuilder");
   const tStat = useTranslations("TeamBuilder.evStat");
   const sp = useSearchParams();
+
+  // Global format preference — flips singles/doubles for every usage-derived
+  // hint (top moves, top items, top abilities, top spreads).
+  const [format, setFormat] = useState<BattleFormat>("doubles");
+  useEffect(() => {
+    setFormat(loadFormatPref());
+    return onFormatPrefChange(setFormat);
+  }, []);
+  const pokemon: RefPokemon[] = useMemo(
+    () => pokemonRaw.map((p) => ({
+      ...p,
+      usage: p.usageByFormat?.[format] ?? null,
+    })),
+    [pokemonRaw, format],
+  );
 
   // Build O(1) lookup maps once
   const pokemonBySlug = new Map(pokemon.map((p) => [p.slug, p]));
@@ -229,24 +252,11 @@ export function TeamBuilderClient({
         </div>
       </header>
 
-      {/* Format + regulation */}
+      {/* Regulation label — format toggle now lives in the title bar */}
       <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
         <div className="rounded-md bg-zinc-100 px-2.5 py-1 font-semibold uppercase tracking-wider text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
           {t("regulationMA")}
         </div>
-        <label className="inline-flex items-center gap-1 font-medium">
-          <span className="uppercase tracking-wider text-zinc-500">{t("format")}:</span>
-          <select
-            value={team.fmt}
-            onChange={(e) =>
-              setTeam((p) => ({ ...p, fmt: e.target.value as "singles" | "doubles" }))
-            }
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
-          >
-            <option value="doubles">{t("formatDoubles")}</option>
-            <option value="singles">{t("formatSingles")}</option>
-          </select>
-        </label>
       </div>
 
       {/* Slots grid */}

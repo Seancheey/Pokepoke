@@ -7,7 +7,7 @@ import {
   localizedAbilityName,
   localizedItemName,
 } from "@/lib/i18n-pokemon";
-import { TeamBuilderClient, type RefPokemon, type RefMove, type RefAbility, type RefItem } from "./TeamBuilderClient";
+import { TeamBuilderClient, type RawRefPokemon, type RefMove, type RefAbility, type RefItem, type PokemonUsage } from "./TeamBuilderClient";
 import { decodeTeam, type TeamShare } from "@/lib/team-share";
 
 export const dynamic = "force-dynamic";
@@ -40,13 +40,23 @@ export default async function TeamBuilderPage({
   ]);
 
   // Trim reference rows to only the fields the client needs (cuts ~30% off the payload).
-  const refPokemon: RefPokemon[] = pokemon.map((p) => {
-    let usage: RefPokemon["usage"] = null;
+  // usageByFormat carries both Singles + Doubles slices; client picks one
+  // reactively based on the Nav format toggle.
+  const refPokemon: RawRefPokemon[] = pokemon.map((p) => {
+    let usageByFormat: RawRefPokemon["usageByFormat"] = null;
     try {
       const parsed = JSON.parse(p.usageStats);
-      if (parsed && Array.isArray(parsed.topMoves)) usage = parsed;
+      if (parsed && (parsed.singles || parsed.doubles)) {
+        usageByFormat = {
+          singles: (parsed.singles ?? null) as PokemonUsage | null,
+          doubles: (parsed.doubles ?? null) as PokemonUsage | null,
+        };
+      } else if (parsed && Array.isArray(parsed.topMoves)) {
+        // Legacy pre-migration shape — treat as doubles only.
+        usageByFormat = { singles: null, doubles: parsed as PokemonUsage };
+      }
     } catch {
-      /* leave usage null */
+      /* leave null */
     }
     return {
       slug: p.slug,
@@ -59,7 +69,7 @@ export default async function TeamBuilderPage({
       hp: p.hp, atk: p.atk, def: p.def, spa: p.spa, spd: p.spd, spe: p.spe,
       learnableMoves: JSON.parse(p.learnableMoves) as string[],
       usagePct: p.usagePct,
-      usage,
+      usageByFormat,
     };
   });
   const refMoves: RefMove[] = moves.map((m) => ({
@@ -81,7 +91,7 @@ export default async function TeamBuilderPage({
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
       <TeamBuilderClient
-        pokemon={refPokemon}
+        pokemonRaw={refPokemon}
         moves={refMoves}
         abilities={refAbilities}
         items={refItems}

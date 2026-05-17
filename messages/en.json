@@ -10,7 +10,10 @@
     "pokemonBuilder": "Pokémon Builder",
     "teams": "Teams",
     "damageCalc": "Damage Calc",
-    "language": "Language"
+    "language": "Language",
+    "formatLabel": "Format",
+    "formatSingles": "Singles",
+    "formatDoubles": "Doubles"
   },
   "Hub": {
     "regulationBadge": "Reg M-A",

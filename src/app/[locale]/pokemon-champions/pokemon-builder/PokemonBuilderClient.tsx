@@ -17,7 +17,18 @@ import {
 import { cn } from "@/lib/cn";
 import { onLoadSavedMon } from "@/lib/my-pokemon";
 import { SaveMyPokemonButton } from "@/components/SaveMyPokemonButton";
+import {
+  loadFormatPref,
+  onFormatPrefChange,
+  type BattleFormat,
+} from "@/lib/format-pref";
 
+/**
+ * Internal RefPokemon shape — `usage` is the *current-format* slice. The
+ * server passes both formats via `usageByFormat`; the client picks one
+ * via the global format preference and rebuilds this view reactively
+ * when the user flips the Nav toggle.
+ */
 export type BuilderRefPokemon = {
   slug: string;
   name: string;
@@ -30,6 +41,9 @@ export type BuilderRefPokemon = {
   learnableMoves: string[];
   usagePct: number;
   usage: PokemonUsage | null;
+};
+export type BuilderRawRefPokemon = Omit<BuilderRefPokemon, "usage"> & {
+  usageByFormat: { singles: PokemonUsage | null; doubles: PokemonUsage | null } | null;
 };
 export type PokemonUsage = {
   topAbilities: Array<{ slug: string; pct: number }>;
@@ -71,18 +85,34 @@ type Build = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function PokemonBuilderClient({
-  pokemon,
+  pokemonRaw,
   moves,
   abilities,
   items,
 }: {
-  pokemon: BuilderRefPokemon[];
+  pokemonRaw: BuilderRawRefPokemon[];
   moves: BuilderRefMove[];
   abilities: BuilderRefAbility[];
   items: BuilderRefItem[];
 }) {
   const t = useTranslations("PokemonBuilder");
   const tStat = useTranslations("TeamBuilder.evStat");
+
+  // Global format preference (Nav title-bar toggle) — flips singles/doubles
+  // and re-derives the per-Pokémon usage slice on the fly.
+  const [format, setFormat] = useState<BattleFormat>("doubles");
+  useEffect(() => {
+    setFormat(loadFormatPref());
+    return onFormatPrefChange(setFormat);
+  }, []);
+
+  const pokemon: BuilderRefPokemon[] = useMemo(
+    () => pokemonRaw.map((p) => ({
+      ...p,
+      usage: p.usageByFormat?.[format] ?? null,
+    })),
+    [pokemonRaw, format],
+  );
 
   const pokemonBySlug = useMemo(() => new Map(pokemon.map((p) => [p.slug, p])), [pokemon]);
   const moveBySlug = useMemo(() => new Map(moves.map((m) => [m.slug, m])), [moves]);
