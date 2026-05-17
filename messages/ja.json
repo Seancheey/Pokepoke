@@ -234,7 +234,9 @@
     "noKo": "KO不可",
     "koImmune": "無効",
     "importFromSaved": "マイポケモンから",
-    "noSavedMons": "まだ保存したポケモンがありません。チーム作成の ★ から保存してください。"
+    "noSavedMons": "まだ保存したポケモンがありません。チーム作成の ★ から保存してください。",
+    "swap": "入れ替え",
+    "swapSides": "攻撃側と防御側を入れ替え"
   },
   "TeamBuilder": {
     "title": "チーム作成",

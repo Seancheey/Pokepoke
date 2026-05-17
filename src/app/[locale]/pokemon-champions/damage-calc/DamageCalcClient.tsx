@@ -154,6 +154,26 @@ export function DamageCalcClient({
     setDef(defaultSide(monBySlug.get(slug), false));
   }
 
+  // Swap attacker ↔ defender, then re-suggest a damage move for the new
+  // attacker (the old move likely isn't in the new mon's learnset).
+  function swapSides() {
+    const oldAtk = atk;
+    const oldDef = def;
+    setAtk(oldDef);
+    setDef(oldAtk);
+    const newAttacker = monBySlug.get(oldDef.slug);
+    if (!newAttacker) {
+      setMoveSlug("");
+      return;
+    }
+    const learn = new Set(newAttacker.learnableMoves);
+    const top = newAttacker.usage?.topMoves.find(
+      (m) =>
+        learn.has(m.slug) && moveBySlug.get(m.slug)?.category !== "status",
+    );
+    setMoveSlug(top?.slug ?? "");
+  }
+
   // Apply a saved-mon config to a side (and, when attacker, seed the move).
   function applySavedMon(mon: SavedMon, side: "attacker" | "defender") {
     const p = monBySlug.get(mon.slug);
@@ -322,6 +342,8 @@ export function DamageCalcClient({
           move={move}
           options={moveOptions}
           attackerSelected={Boolean(attackerMon)}
+          canSwap={Boolean(attackerMon) && Boolean(defenderMon)}
+          onSwap={swapSides}
         />
         <FlowArrow />
         <SidePanel
@@ -386,19 +408,35 @@ function MoveCard({
   move,
   options,
   attackerSelected,
+  canSwap,
+  onSwap,
 }: {
   moveSlug: string;
   setMoveSlug: (v: string) => void;
   move: CalcRefMove | undefined;
   options: ComboboxOption[];
   attackerSelected: boolean;
+  canSwap: boolean;
+  onSwap: () => void;
 }) {
   const t = useTranslations("DamageCalc");
   return (
     <article className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">
-        {t("moveLabel")}
-      </h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">
+          {t("moveLabel")}
+        </h2>
+        <button
+          type="button"
+          onClick={onSwap}
+          disabled={!canSwap}
+          title={t("swapSides")}
+          aria-label={t("swapSides")}
+          className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-[11px] font-medium text-zinc-600 hover:bg-zinc-100 disabled:opacity-40 disabled:hover:bg-white dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:disabled:hover:bg-zinc-900"
+        >
+          ⇄ {t("swap")}
+        </button>
+      </div>
       <div className="mt-3">
         <Combobox
           value={moveSlug}

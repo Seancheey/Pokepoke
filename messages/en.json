@@ -234,7 +234,9 @@
     "noKo": "Cannot KO",
     "koImmune": "Immune",
     "importFromSaved": "From My Pokémon",
-    "noSavedMons": "No saved Pokémon yet. Save one from the Team Builder ★."
+    "noSavedMons": "No saved Pokémon yet. Save one from the Team Builder ★.",
+    "swap": "Swap",
+    "swapSides": "Swap attacker and defender"
   },
   "TeamBuilder": {
     "title": "Team Builder",

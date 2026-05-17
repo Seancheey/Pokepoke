@@ -234,7 +234,9 @@
     "noKo": "无法击倒",
     "koImmune": "免疫",
     "importFromSaved": "从我的宝可梦",
-    "noSavedMons": "暂无保存的宝可梦。从队伍构筑界面点 ★ 即可保存。"
+    "noSavedMons": "暂无保存的宝可梦。从队伍构筑界面点 ★ 即可保存。",
+    "swap": "互换",
+    "swapSides": "互换攻防双方"
   },
   "TeamBuilder": {
     "title": "队伍构筑",
