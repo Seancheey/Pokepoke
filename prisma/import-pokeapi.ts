@@ -645,6 +645,54 @@ async function main() {
     });
   });
 
+  // Mega / Primal forms — PokeAPI ships localized pokemon_name for some but
+  // not all of them, leaving ~40% of mega forms with just the species name
+  // (e.g. "龟足巨铠" instead of "超级龟足巨铠"). When the slug indicates a
+  // Mega/Primal form and the constructed name doesn't already carry a known
+  // mega/primal prefix in that locale, prepend the locale-appropriate one
+  // and append the X/Y/Z suffix (full-width to match PokeAPI's house style).
+  const MEGA_PREFIX: Record<Locale, string> = {
+    en: "Mega ",
+    ja: "メガ",
+    "zh-Hans": "超级",
+    "zh-Hant": "超級",
+  };
+  const PRIMAL_PREFIX: Record<Locale, string> = {
+    en: "Primal ",
+    ja: "ゲンシ",
+    "zh-Hans": "原始",
+    "zh-Hant": "原始",
+  };
+  const MEGA_PRIMAL_PREFIX_REGEX = /^(Mega |Primal |メガ|ゲンシ|超级|超級|原始)/;
+  function applyMegaPrimalPrefix(
+    names: Record<Locale, string>,
+    identifier: string,
+  ): Record<Locale, string> {
+    const megaMatch = identifier.match(/-mega(?:-([xyz]))?$/i);
+    const isPrimal = identifier.endsWith("-primal");
+    if (!megaMatch && !isPrimal) return names;
+    const prefixes = isPrimal ? PRIMAL_PREFIX : MEGA_PREFIX;
+    const suffix = megaMatch?.[1] ? megaMatch[1].toUpperCase() : "";
+    const fullwidth = suffix
+      ? String.fromCharCode(suffix.charCodeAt(0) + 0xFEE0)
+      : "";
+    const out: Record<Locale, string> = { ...names };
+    for (const loc of ["en", "ja", "zh-Hans", "zh-Hant"] as Locale[]) {
+      let name = out[loc];
+      if (!name) continue;
+      if (!MEGA_PRIMAL_PREFIX_REGEX.test(name)) {
+        name = prefixes[loc] + name;
+      }
+      if (suffix && !name.endsWith(suffix) && !name.endsWith(fullwidth)) {
+        // English keeps the half-width letter (matches PokeAPI's "Mega Charizard X"),
+        // ja/zh-* use full-width to match existing data (e.g. "超级喷火龙Ｘ").
+        name = name + (loc === "en" ? suffix : fullwidth);
+      }
+      out[loc] = name;
+    }
+    return out;
+  }
+
   // Build localized name for a Pokemon, combining species name + form descriptor.
   // For default forms, return the species name; for non-default forms, use form-specific
   // display name when available, else compose from species + form descriptor.
@@ -694,7 +742,10 @@ async function main() {
     const stats = statsByMon.get(monId) ?? {};
     const types = typesByMon.get(monId) ?? {};
     const abs = abilitiesByMon.get(monId) ?? { normal: [], hidden: null };
-    const namesMap = buildPokemonNames(monId, speciesId, isDefault);
+    const namesMap = applyMegaPrimalPrefix(
+      buildPokemonNames(monId, speciesId, isDefault),
+      p.identifier,
+    );
     const enName = namesMap.en || p.identifier;
     // Prefer real Smogon-derived rank/usage over the hand-curated overlay when present.
     // If Smogon data is loaded, never fall back to the static overlay — its ranks
