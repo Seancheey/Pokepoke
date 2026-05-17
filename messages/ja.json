@@ -13,7 +13,9 @@
     "language": "言語",
     "formatLabel": "フォーマット",
     "formatSingles": "シングル",
-    "formatDoubles": "ダブル"
+    "formatDoubles": "ダブル",
+    "star": "Star",
+    "starOnGithub": "GitHubでpokeDDにスターを付ける"
   },
   "Hub": {
     "regulationBadge": "レギュ M-A",

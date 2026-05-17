@@ -13,7 +13,9 @@
     "language": "Language",
     "formatLabel": "Format",
     "formatSingles": "Singles",
-    "formatDoubles": "Doubles"
+    "formatDoubles": "Doubles",
+    "star": "Star",
+    "starOnGithub": "Star pokeDD on GitHub"
   },
   "Hub": {
     "regulationBadge": "Reg M-A",

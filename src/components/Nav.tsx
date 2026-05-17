@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { BrandMark } from "./BrandMark";
 import { FormatToggle } from "./FormatToggle";
+import { GitHubStarLink } from "./GitHubStarLink";
 
 export async function Nav() {
   const t = await getTranslations("Nav");
@@ -41,6 +42,7 @@ export async function Nav() {
         </nav>
         <div className="ml-auto flex items-center gap-2 md:ml-0">
           <FormatToggle />
+          <GitHubStarLink />
           <LocaleSwitcher />
         </div>
       </div>

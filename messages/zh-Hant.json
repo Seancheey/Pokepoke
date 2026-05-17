@@ -13,7 +13,9 @@
     "language": "語言",
     "formatLabel": "對戰形式",
     "formatSingles": "單打",
-    "formatDoubles": "雙打"
+    "formatDoubles": "雙打",
+    "star": "Star",
+    "starOnGithub": "在 GitHub 為 pokeDD 點 star"
   },
   "Hub": {
     "regulationBadge": "規則 M-A",
